@@ -7,6 +7,7 @@ import { getTokenStatus } from './services/meta.js';
 import { adsRouter } from './routes/ads.js';
 import { clientsRouter } from './routes/clients.js';
 import { reportsRouter } from './routes/reports.js';
+import { adminRouter } from './routes/admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -23,6 +24,7 @@ app.get('/api/system/meta-token', async (_req, res, next) => {
 app.use('/api', clientsRouter);
 app.use('/api', adsRouter);
 app.use('/api', reportsRouter);
+app.use('/api', adminRouter);
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'not_found', message: '找不到 API endpoint。' }));
 
