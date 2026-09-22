@@ -46,8 +46,13 @@ app.use((error, _req, res, _next) => {
 
 await migrate();
 await runStartupChecks();
-const bootstrapResult = await bootstrapMetaAccounts();
-console.log('[bootstrap-meta]', JSON.stringify(bootstrapResult));
+
+try {
+  const bootstrapResult = await bootstrapMetaAccounts();
+  console.log('[bootstrap-meta]', JSON.stringify(bootstrapResult));
+} catch (error) {
+  console.error('[bootstrap-meta] skipped:', error.message);
+}
 
 app.listen(config.port, '0.0.0.0', () => {
   console.log(`Hunter ads report system listening on :${config.port}`);
