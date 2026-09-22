@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { migrate } from './migrate.js';
 import { runStartupChecks } from './startup-check.js';
 import { getTokenStatus } from './services/meta.js';
+import { getSystemStatus } from './services/system.js';
 import { adsRouter } from './routes/ads.js';
 import { clientsRouter } from './routes/clients.js';
 import { reportsRouter } from './routes/reports.js';
@@ -20,6 +21,10 @@ app.get('/health', (_req, res) => res.json({ ok: true, service: 'hunter-ads-repo
 
 app.get('/api/system/meta-token', async (_req, res, next) => {
   try { res.json(await getTokenStatus()); } catch (error) { next(error); }
+});
+
+app.get('/api/system/status', async (_req, res, next) => {
+  try { res.json(await getSystemStatus()); } catch (error) { next(error); }
 });
 
 app.use('/api', clientsRouter);
