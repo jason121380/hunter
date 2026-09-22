@@ -5,8 +5,8 @@ const COOKIE_NAME = 'hunter_session';
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 
 function getSessionSecret() {
-  const value = process.env.SESSION_SECRET || '';
-  if (!value) throw new Error('SESSION_SECRET 尚未設定。');
+  const value = process.env.SESSION_SECRET || process.env.ADMIN_KEY || '';
+  if (!value) throw new Error('SESSION_SECRET / ADMIN_KEY 尚未設定。');
   return value;
 }
 
