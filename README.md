@@ -131,5 +131,5 @@ GET /health  →  {"ok":true,"service":"hunter-ads-report-system","ready":true}
 - Auth / roles / 後台使用者管理 / 廣告帳號授權：done
 - PWA、手機版最佳化：done
 - 使用者自行改密碼：next
-- 「手動回報」（Google Ads）：按鈕存在但未實作
+- 「手動回報」（Google Ads）：未實作，按鈕已隱藏
 - Google Ads API 串接：不在 V1 範圍

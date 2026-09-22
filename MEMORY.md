@@ -93,6 +93,6 @@
 | 換掉正式環境的舊 `admin` 密碼 | ⬜ 待使用者執行 | 設 `DEFAULT_ADMIN_PASSWORD` + `DEFAULT_ADMIN_PASSWORD_ROTATE=true` → 部署 → 改回 `false` |
 | 設定獨立的 `SESSION_SECRET` | ⬜ 建議 | 目前 fallback 到 `ADMIN_KEY` |
 | 同事自己改密碼 | ⬜ 未做 | 目前只有管理員能改別人的密碼 |
-| 「＋ 手動回報」按鈕沒有功能 | ⬜ 未做 | README 說 Google Ads V1 維持手動回報，但按鈕是空的 |
+| 「＋ 手動回報」功能 | ⬜ 未做 | 按鈕已隱藏（`index.html` 加 `hidden`）；實作時移除即可 |
 | Meta Graph API 實際呼叫的驗證 | ⚠️ 未在開發環境測過 | 沒有有效 token，只驗證到參數組裝與錯誤處理 |
 | 自動化測試 | ⬜ 無 | 目前靠本機 Postgres + curl + Playwright 手動驗證 |
