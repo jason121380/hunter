@@ -2,6 +2,7 @@ import express from 'express';
 import { config } from './config.js';
 import { migrate } from './migrate.js';
 import { getTokenStatus } from './services/meta.js';
+import { adsRouter } from './routes/ads.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -12,26 +13,19 @@ app.get('/health', (_req, res) => {
 });
 
 app.get('/api/system/meta-token', async (_req, res, next) => {
-  try {
-    res.json(await getTokenStatus());
-  } catch (error) {
-    next(error);
-  }
+  try { res.json(await getTokenStatus()); }
+  catch (error) { next(error); }
 });
 
+app.use('/api', adsRouter);
+
 app.use('/api', (_req, res) => {
-  res.status(501).json({
-    error: 'migration_in_progress',
-    message: 'Railway V1 API 正在遷移；正式切換前舊 Apps Script 仍維持運作。',
-  });
+  res.status(404).json({ error: 'not_found', message: '找不到 API endpoint。' });
 });
 
 app.use((error, _req, res, _next) => {
   console.error(error);
-  res.status(500).json({
-    error: 'internal_error',
-    message: error.message || '伺服器錯誤',
-  });
+  res.status(500).json({ error: 'internal_error', message: error.message || '伺服器錯誤' });
 });
 
 await migrate();
