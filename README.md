@@ -29,6 +29,7 @@ GitHub + Railway 正式化遷移專案。
 | `META_API_VERSION` | `v26.0` | Graph API 版本 |
 | `DEFAULT_ADMIN_USERNAME` | `admin` | 預設管理員帳號名稱 |
 | `BOOTSTRAP_META_ON_START` | `false` | 啟動時是否自動匯入 Meta 廣告帳號 |
+| `DEFAULT_ADMIN_PASSWORD_ROTATE` | `false` | 設為 `true` 時啟動會把 `DEFAULT_ADMIN_PASSWORD` 強制寫回既有管理員帳號 |
 | `DATABASE_SSL_INSECURE` | `false` | 設為 `true` 會停用資料庫 TLS 憑證驗證，僅在自簽憑證時使用 |
 | `NODE_ENV` | — | 設為 `production` 會啟用 HSTS |
 | `ADMIN_KEY` | — | 舊版金鑰，僅在 `SESSION_SECRET` 未設定時作為簽章備援 |
@@ -38,6 +39,17 @@ GitHub + Railway 正式化遷移專案。
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
+
+## 首次升級須執行：輪替既有管理員密碼
+
+舊版本會自動建立密碼為 `1234` 的 `admin` 帳號。該密碼的雜湊仍留在資料庫中，
+新版本不會自動更動既有帳號，必須手動輪替一次：
+
+1. 在 Railway Variables 設定 `DEFAULT_ADMIN_PASSWORD`（至少 12 字元）與
+   `DEFAULT_ADMIN_PASSWORD_ROTATE=true`。
+2. 重新部署，log 出現 `"passwordRotated":true` 即代表完成。
+3. 把 `DEFAULT_ADMIN_PASSWORD_ROTATE` 改回 `false`（或刪除），
+   避免每次部署都重設密碼。
 
 ## Database
 

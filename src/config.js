@@ -11,6 +11,7 @@ export const config = {
   defaultAdmin: {
     username: process.env.DEFAULT_ADMIN_USERNAME || 'admin',
     password: process.env.DEFAULT_ADMIN_PASSWORD || '',
+    rotate: bool(process.env.DEFAULT_ADMIN_PASSWORD_ROTATE, false),
   },
   meta: {
     accessToken: process.env.META_ACCESS_TOKEN || '',

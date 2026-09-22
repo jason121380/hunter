@@ -54,7 +54,7 @@ export function verifyPassword(password, stored) {
 }
 
 export async function ensureDefaultAdmin() {
-  const { username, password } = config.defaultAdmin;
+  const { username, password, rotate } = config.defaultAdmin;
 
   if (!password || password.length < MIN_PASSWORD_LENGTH) {
     return { created: false, skipped: true, reason: 'DEFAULT_ADMIN_PASSWORD 未設定或長度不足。' };
@@ -66,12 +66,19 @@ export async function ensureDefaultAdmin() {
   );
 
   if (existing.rows[0]) {
-    if (!existing.rows[0].password_hash) {
+    // 系統目前沒有改密碼介面，因此提供 DEFAULT_ADMIN_PASSWORD_ROTATE
+    // 讓既有帳號（例如早期建立的弱密碼帳號）能透過環境變數輪替密碼。
+    if (!existing.rows[0].password_hash || rotate) {
       await query(
         `UPDATE users SET password_hash=$1, active=TRUE, role='ADMIN', updated_at=NOW() WHERE id=$2`,
         [hashPassword(password), existing.rows[0].id]
       );
-      return { created: false, passwordInitialized: true, username };
+      return {
+        created: false,
+        username,
+        passwordRotated: Boolean(existing.rows[0].password_hash && rotate),
+        passwordInitialized: !existing.rows[0].password_hash,
+      };
     }
     return { created: false, username };
   }
