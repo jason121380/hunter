@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>廣告數據回報</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header><button id="back">☰</button><strong id="title">廣告數據回報</strong><button id="refresh">↻</button></header>
+    <main>
+      <section id="home" class="screen active">
+        <small>廣告成效管理</small><h1>目前進行中的客戶</h1>
+        <p>選擇客戶後進行統一或個別回報。</p>
+        <button id="manual" class="outline">＋ 手動回報</button>
+        <div id="clients" class="list"></div>
+      </section>
+      <section id="mode" class="screen">
+        <small>選擇回報方式</small><h1 id="clientName"></h1>
+        <button id="unified" class="card"><b>統一回報</b><span>一次整理所有進行中廣告</span></button>
+        <button id="individual" class="card"><b>個別回報</b><span>選擇特定廣告與廣告組合</span></button>
+      </section>
+      <section id="campaigns" class="screen"><small>個別回報</small><h1>選擇廣告</h1><div id="campaignList" class="list"></div></section>
+      <section id="adsets" class="screen"><small>廣告組合</small><h1 id="campaignName"></h1><div id="adsetList" class="list"></div><button id="adsetNext" class="primary">繼續</button></section>
+      <section id="period" class="screen">
+        <small id="periodMode"></small><h1>選擇統計區間</h1>
+        <div class="dates"><label>開始日期<input id="start" type="date"></label><label>結束日期<input id="end" type="date"></label></div>
+        <button id="run" class="primary">讀取成效</button><div id="result"></div>
+      </section>
+    </main>
+    <div id="loading" class="loading" hidden>讀取資料中…</div>
+    <div id="toast" class="toast" hidden></div>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
