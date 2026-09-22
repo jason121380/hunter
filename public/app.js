@@ -4,7 +4,7 @@ const state={client:null,campaign:null,campaigns:[],adsets:[],selected:new Set()
 async function api(path,options={}){
   const res=await fetch(path,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});
   const data=await res.json().catch(()=>({}));
-  if(!res.ok){const msg=data.message||'系統錯誤';if(/Session has expired|access token/i.test(msg))throw new Error('Meta 存取權杖已過期，請更新 Token。');throw new Error(msg)}
+  if(res.status===401){location.href='/login';throw new Error('請先登入。')}if(!res.ok){const msg=data.message||'系統錯誤';if(/Session has expired|access token/i.test(msg))throw new Error('Meta 存取權杖已過期，請更新 Token。');throw new Error(msg)}
   return data;
 }
 function loading(v){$('loading').hidden=!v}
