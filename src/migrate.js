@@ -1,4 +1,5 @@
 import { query } from './db.js';
+import { ensureDefaultAdmin } from './services/auth.js';
 
 export async function migrate() {
   await query(`
@@ -11,6 +12,12 @@ export async function migrate() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS username TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique_idx
+      ON users (username)
+      WHERE username IS NOT NULL;
 
     CREATE TABLE IF NOT EXISTS clients (
       id BIGSERIAL PRIMARY KEY,
@@ -52,4 +59,6 @@ export async function migrate() {
     CREATE INDEX IF NOT EXISTS report_logs_lookup_idx
       ON report_logs (client_id, external_campaign_id, start_date, end_date);
   `);
+
+  await ensureDefaultAdmin();
 }
