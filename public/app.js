@@ -4,7 +4,7 @@ const state={client:null,campaign:null,campaigns:[],adsets:[],selected:new Set()
 async function api(path,options={}){
   const res=await fetch(path,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});
   const data=await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error(data.message||'系統錯誤');
+  if(!res.ok){const msg=data.message||'系統錯誤';if(/Session has expired|access token/i.test(msg))throw new Error('Meta 存取權杖已過期，請更新 Token。');throw new Error(msg)}
   return data;
 }
 function loading(v){$('loading').hidden=!v}
@@ -23,7 +23,7 @@ async function loadClients(){
     const {clients}=await api('/api/clients');
     $('clients').innerHTML=clients.map(c=>`<button class="client" data-id="${c.id}"><b>${esc(c.name)}</b><span class="meta">進行中廣告：${c.campaignCounts.total} 組 ｜ 私訊 ${c.campaignCounts.message} ｜ 流量 ${c.campaignCounts.traffic}</span></button>`).join('')||'<p>尚無客戶資料</p>';
     document.querySelectorAll('.client').forEach(b=>b.onclick=()=>selectClient(clients.find(c=>c.id===b.dataset.id)));
-  }catch(e){$('clients').innerHTML=`<p>${esc(e.message)}</p>`}finally{loading(false)}
+  }catch(e){$('clients').innerHTML=`<div class="error-box">${esc(e.message)}</div>`}finally{loading(false)}
 }
 function selectClient(c){state.client=c;$('clientName').textContent=c.name;screen('mode')}
 $('individual').onclick=async()=>{state.mode='individual';loading(true);try{const d=await api(`/api/accounts/${encodeURIComponent(state.client.accountId)}/campaigns`);state.campaigns=d.campaigns;renderCampaigns();screen('campaigns')}catch(e){toast(e.message)}finally{loading(false)}};
