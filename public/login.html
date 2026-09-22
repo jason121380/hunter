@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>登入｜廣告數據回報</title>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#171717;background:#f6f7f9}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
+    .card{width:min(100%,460px);background:#fff;border-radius:24px;padding:30px 24px;box-shadow:0 18px 60px #0000000b}
+    .brand{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:16px;background:#ff6500;color:white;font-weight:900;font-size:20px;margin-bottom:20px}
+    h1{font-size:28px;margin:0 0 8px}.sub{color:#737373;line-height:1.6;margin:0 0 26px}
+    label{display:block;font-size:13px;font-weight:800;margin:16px 0 7px}
+    input{width:100%;height:52px;border:1px solid #ddd;border-radius:14px;padding:0 15px;font:inherit;outline:none}
+    input:focus{border-color:#ff6500;box-shadow:0 0 0 3px #ff650016}
+    button{width:100%;height:52px;margin-top:22px;border:0;border-radius:14px;background:#ff6500;color:#fff;font:inherit;font-weight:900;cursor:pointer}
+    button:disabled{opacity:.55;cursor:default}
+    .error{display:none;margin-top:16px;padding:12px 14px;border-radius:12px;background:#fff3ed;color:#a53f00;font-size:14px;line-height:1.5}
+    .hint{font-size:12px;color:#999;margin-top:16px;text-align:center}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="brand">AD</div>
+    <h1>廣告數據回報</h1>
+    <p class="sub">請登入後進入內部廣告回報系統。</p>
+
+    <form id="form">
+      <label for="username">帳號</label>
+      <input id="username" name="username" autocomplete="username" value="admin" required>
+
+      <label for="password">密碼</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+
+      <button id="submit" type="submit">登入</button>
+      <div id="error" class="error"></div>
+    </form>
+    <div class="hint">內部系統</div>
+  </main>
+  <script>
+    const form=document.getElementById('form');
+    const button=document.getElementById('submit');
+    const error=document.getElementById('error');
+
+    fetch('/api/auth/me').then(r=>{if(r.ok) location.replace('/')}).catch(()=>{});
+
+    form.addEventListener('submit',async e=>{
+      e.preventDefault();
+      error.style.display='none';
+      button.disabled=true;
+      button.textContent='登入中…';
+      try{
+        const res=await fetch('/api/auth/login',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            username:document.getElementById('username').value.trim(),
+            password:document.getElementById('password').value
+          })
+        });
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.message||'登入失敗');
+        location.replace('/');
+      }catch(err){
+        error.textContent=err.message;
+        error.style.display='block';
+      }finally{
+        button.disabled=false;
+        button.textContent='登入';
+      }
+    });
+  </script>
+</body>
+</html>
