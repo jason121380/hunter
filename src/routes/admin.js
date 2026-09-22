@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { importMetaAccounts } from '../services/admin.js';
 import { bootstrapMetaAccounts } from '../services/bootstrap.js';
-import { metaGetAll } from '../services/meta.js';
+import { metaGetAll, exchangeUserToken } from '../services/meta.js';
 import { requireAdmin } from '../middleware/admin.js';
 
 export const adminRouter = Router();
@@ -34,4 +34,13 @@ adminRouter.post('/admin/import-meta-accounts', async (req, res, next) => {
 adminRouter.post('/admin/bootstrap-meta', async (_req, res, next) => {
   try { res.json(await bootstrapMetaAccounts()); }
   catch (error) { next(error); }
+});
+
+
+adminRouter.post('/admin/exchange-meta-token', async (req, res, next) => {
+  try {
+    const shortToken = String(req.body?.shortToken || '').trim();
+    const result = await exchangeUserToken(shortToken);
+    res.json(result);
+  } catch (error) { next(error); }
 });
