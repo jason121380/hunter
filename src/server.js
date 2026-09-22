@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { migrate } from './migrate.js';
 import { runStartupChecks } from './startup-check.js';
+import { bootstrapMetaAccounts } from './services/bootstrap.js';
 import { getTokenStatus } from './services/meta.js';
 import { getSystemStatus } from './services/system.js';
 import { adsRouter } from './routes/ads.js';
@@ -45,6 +46,8 @@ app.use((error, _req, res, _next) => {
 
 await migrate();
 await runStartupChecks();
+const bootstrapResult = await bootstrapMetaAccounts();
+console.log('[bootstrap-meta]', JSON.stringify(bootstrapResult));
 
 app.listen(config.port, '0.0.0.0', () => {
   console.log(`Hunter ads report system listening on :${config.port}`);
