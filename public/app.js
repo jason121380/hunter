@@ -35,7 +35,7 @@ function renderCampaigns(){
 }
 async function selectCampaign(c){
  state.campaign=c;loading(true);
- try{const d=await api(`/api/campaigns/${encodeURIComponent(c.id)}/adsets`);state.adsets=d.adSets;state.selected=new Set(d.adSets.map(x=>x.id));$('campaignName').textContent=c.name;renderAdsets();screen('adsets')}catch(e){toast(e.message)}finally{loading(false)}
+ try{const d=await api(`/api/campaigns/${encodeURIComponent(c.id)}/adsets?accountId=${encodeURIComponent(state.client.accountId)}`);state.adsets=d.adSets;state.selected=new Set(d.adSets.map(x=>x.id));$('campaignName').textContent=c.name;renderAdsets();screen('adsets')}catch(e){toast(e.message)}finally{loading(false)}
 }
 function renderAdsets(){
  $('adsetList').innerHTML=state.adsets.map(a=>`<button class="adset ${state.selected.has(a.id)?'selected':''}" data-id="${a.id}"><b>${esc(a.name)}</b><span class="meta">${state.selected.has(a.id)?'✓ 已選擇':'點擊選擇'}</span></button>`).join('');
@@ -63,4 +63,7 @@ function metrics(r){if(!r)return'';const d=r.data||{};return r.type==='message'
  ?`<div class="metric">累積私訊數<b>${n(d.messages)}</b></div><div class="metric">單次私訊成本<b>NT$ ${n(d.costPerMessage)}</b></div><div class="metric">累積花費<b>NT$ ${n(d.actualSpend)}</b></div>`
  :`<div class="metric">${esc(d.resultLabel||'成果')}次數<b>${n(d.resultCount)}</b></div><div class="metric">每次${esc(d.resultLabel||'成果')}成本<b>NT$ ${n(d.costPerResult)}</b></div><div class="metric">花費<b>NT$ ${n(d.actualSpend)}</b></div><div class="metric">點擊率<b>${Number(d.ctr||0).toFixed(2)}%</b></div>`}
 function n(v){return Math.round(Number(v)||0).toLocaleString('zh-TW')}function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('adminLink').onclick=()=>{location.href='/admin'};
+async function showAdminEntry(){try{const {user}=await api('/api/auth/me');if(user?.role==='ADMIN')$('adminLink').hidden=false}catch{}}
+showAdminEntry();
 loadClients();

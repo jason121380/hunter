@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { buildUnifiedReport } from '../services/unified.js';
 import { query } from '../db.js';
+import { assertAccountAllowed, assertClientAllowed } from '../services/access.js';
 import {
   requireId,
   requireDateRange,
@@ -8,6 +9,7 @@ import {
   optionalText,
   requirePlainObject,
   requireMetaObjectId,
+  requireMetaAccountId,
 } from '../validate.js';
 
 export const reportsRouter = Router();
@@ -16,8 +18,11 @@ const PLATFORMS = ['META', 'GOOGLE', 'MANUAL'];
 const REPORT_TYPES = ['unified', 'individual', 'manual'];
 
 reportsRouter.post('/reports/unified', async (req, res, next) => {
-  try { res.json(await buildUnifiedReport(req.body || {})); }
-  catch (error) { next(error); }
+  try {
+    const accountId = requireMetaAccountId(req.body?.accountId);
+    await assertAccountAllowed(req.user, accountId);
+    res.json(await buildUnifiedReport(req.body || {}));
+  } catch (error) { next(error); }
 });
 
 reportsRouter.post('/reports/mark-reported', async (req, res, next) => {
@@ -31,6 +36,8 @@ reportsRouter.post('/reports/mark-reported', async (req, res, next) => {
     const metadata = requirePlainObject(body.metadata, 'metadata');
 
     const { startDate, endDate } = requireDateRange(body.startDate, body.endDate);
+
+    await assertClientAllowed(req.user, clientId);
 
     const result = await query(`
       INSERT INTO report_logs
@@ -47,6 +54,8 @@ reportsRouter.get('/reports/status', async (req, res, next) => {
   try {
     const clientId = requireId(req.query.clientId, 'clientId');
     const { startDate, endDate } = requireDateRange(req.query.startDate, req.query.endDate);
+
+    await assertClientAllowed(req.user, clientId);
 
     const result = await query(`
       SELECT external_campaign_id AS "campaignId", MAX(reported_at) AS "reportedAt"

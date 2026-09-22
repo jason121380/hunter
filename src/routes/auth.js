@@ -7,6 +7,7 @@ import {
   getSessionUser,
 } from '../services/auth.js';
 import { loginRateLimit, resetLoginRateLimit } from '../middleware/rate-limit.js';
+import { query } from '../db.js';
 
 export const authRouter = Router();
 
@@ -35,16 +36,32 @@ authRouter.post('/login', loginRateLimit, async (req, res, next) => {
   }
 });
 
-authRouter.get('/me', (req, res, next) => {
+// 這個端點在 requireLogin 之前，因此自行以資料庫為準取回目前的角色與狀態，
+// 避免前端依 token 裡過期的角色顯示不該出現的入口。
+authRouter.get('/me', async (req, res, next) => {
   try {
-    const user = getSessionUser(req);
-    if (!user) return res.status(401).json({ error: 'unauthorized', message: '請先登入。' });
+    const payload = getSessionUser(req);
+    if (!payload) return res.status(401).json({ error: 'unauthorized', message: '請先登入。' });
+
+    const result = await query(
+      `SELECT id, username, display_name, role, active,
+              (password_hash IS NOT NULL) AS has_password
+       FROM users WHERE id=$1 LIMIT 1`,
+      [payload.uid]
+    );
+
+    const row = result.rows[0];
+    if (!row || !row.active || !row.has_password) {
+      clearSessionCookie(req, res);
+      return res.status(401).json({ error: 'unauthorized', message: '請先登入。' });
+    }
+
     res.json({
       user: {
-        id: user.uid,
-        username: user.username,
-        displayName: user.displayName,
-        role: user.role,
+        id: String(row.id),
+        username: row.username || '',
+        displayName: row.display_name || '',
+        role: row.role,
       },
     });
   } catch (error) {

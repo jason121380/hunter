@@ -42,6 +42,15 @@ app.get('/login.js', (_req, res) => {
 app.use('/api/auth', authRouter);
 
 app.use(requireLogin);
+
+// 後台頁面只給 ADMIN；放在 static 之前，避免一般使用者直接取得 /admin.html。
+app.get(['/admin', '/admin.html', '/admin.js'], (req, res, next) => {
+  if (req.user?.role !== 'ADMIN') return res.redirect('/');
+  const file = req.path === '/admin.js' ? 'admin.js' : 'admin.html';
+  if (file === 'admin.js') res.type('application/javascript');
+  res.sendFile(path.join(publicDir, file), err => (err ? next(err) : undefined));
+});
+
 app.use(express.static(publicDir));
 
 app.get('/api/system/meta-token', async (_req, res, next) => {

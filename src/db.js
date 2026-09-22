@@ -53,3 +53,23 @@ export async function query(text, params = []) {
   }
   return pool.query(text, params);
 }
+
+export async function withTransaction(run) {
+  if (!pool) {
+    console.error('[db] DATABASE_URL 尚未設定，交易已中止。');
+    throw httpError(503, '服務尚未就緒，請稍後再試。');
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await run(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}

@@ -193,21 +193,47 @@ export function clearSessionCookie(req, res) {
   res.setHeader('Set-Cookie', `${COOKIE_NAME}=; ${cookieFlags(req)}; Max-Age=0`);
 }
 
-export function requireLogin(req, res, next) {
-  let user = null;
+function denyRequest(req, res) {
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({ error: 'unauthorized', message: '請先登入。' });
+  }
+  return res.redirect('/login');
+}
+
+// Session token 只用來證明「是誰」；帳號是否啟用、目前角色一律以資料庫為準，
+// 這樣管理員停用或降級某個帳號時才會立即生效，而不是等 token 過期。
+export async function requireLogin(req, res, next) {
+  let payload = null;
   try {
-    user = getSessionUser(req);
+    payload = getSessionUser(req);
   } catch (error) {
     return next(error);
   }
 
-  if (!user) {
-    if (req.path.startsWith('/api/')) {
-      return res.status(401).json({ error: 'unauthorized', message: '請先登入。' });
-    }
-    return res.redirect('/login');
-  }
+  if (!payload) return denyRequest(req, res);
 
-  req.user = user;
-  next();
+  try {
+    const result = await query(
+      `SELECT id, username, display_name, role, active,
+              (password_hash IS NOT NULL) AS has_password
+       FROM users WHERE id=$1 LIMIT 1`,
+      [payload.uid]
+    );
+
+    const row = result.rows[0];
+    if (!row || !row.active || !row.has_password) {
+      clearSessionCookie(req, res);
+      return denyRequest(req, res);
+    }
+
+    req.user = {
+      uid: String(row.id),
+      username: row.username || '',
+      displayName: row.display_name || '',
+      role: row.role,
+    };
+    next();
+  } catch (error) {
+    next(error);
+  }
 }

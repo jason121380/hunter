@@ -51,18 +51,40 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 3. 把 `DEFAULT_ADMIN_PASSWORD_ROTATE` 改回 `false`（或刪除），
    避免每次部署都重設密碼。
 
+## 後台管理（`/admin`）
+
+僅 `ADMIN` 角色可進入，一般使用者會被導回首頁。功能：
+
+- 新增／編輯／刪除使用者，設定顯示名稱、角色、啟用狀態
+- 重設任一帳號的密碼（至少 12 字元）
+- **指派每位使用者可檢視的廣告帳號**
+
+權限模型：
+
+| 角色 | 可檢視的廣告帳號 | 後台管理 | Meta Token |
+| --- | --- | --- | --- |
+| `ADMIN` | 全部，不受指派限制 | ✅ | ✅ |
+| `STAFF` | 僅被指派的項目 | ❌ | ❌ |
+
+權限在**後端每個 API 上強制執行**（客戶清單、廣告、廣告組合、統一／個別回報、
+回報紀錄寫入與查詢），不是只在前端隱藏。使用者的啟用狀態與角色每次請求都以
+資料庫為準，因此停用或降級帳號會立即生效，不需等 session 過期。
+
+防鎖死保護：不能停用、降級或刪除自己的帳號，也不能移除系統中最後一位可登入的管理員。
+
 ## Database
 
-`migrations/001_init.sql` 是 schema 的唯一來源，由 `src/migrate.js` 在每次啟動時執行（內容必須可重複執行）。
+`migrations/` 下的 `.sql` 檔會依檔名順序在每次啟動時執行，內容必須可重複執行。
 
-資料表：`users`、`clients`、`ad_accounts`、`report_logs`。
+資料表：`users`、`clients`、`ad_accounts`、`report_logs`、`user_clients`。
 
 ## 安全機制
 
 - 登入採 HttpOnly + SameSite=Lax + Secure Cookie，內容為 HMAC-SHA256 簽章的 session token（12 小時有效）。
 - 密碼以 scrypt 雜湊儲存；驗證使用 timing-safe 比對。
 - 登入端點有節流保護（同 IP + 帳號 15 分鐘內 10 次）。
-- 管理功能（`/api/admin/*`）以使用者角色 `ADMIN` 控管，不再使用 `x-admin-key` header。
+- 管理功能（`/api/admin/*`）與 `/admin` 頁面以使用者角色 `ADMIN` 控管，不再使用 `x-admin-key` header。
+- 每位使用者可檢視的廣告帳號由後端逐一驗證，無法靠直接呼叫 API 繞過。
 - 所有寫入型請求會檢查 `Origin` 同源（CSRF 第二道防線）。
 - 回應帶 CSP、`X-Content-Type-Options`、`X-Frame-Options`、`Referrer-Policy` 等安全標頭。
 - 所有外部輸入（客戶 ID、日期、Meta 物件 ID）在進入 SQL 或 Graph API 路徑前皆經白名單驗證。
@@ -75,5 +97,5 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 - Campaign / Ad Set / Insights routes: done
 - Frontend REST migration: done
 - Auth / roles: done
-- 使用者管理介面（新增帳號、改密碼）: next
+- 使用者管理介面（新增帳號、改密碼、指派廣告帳號）: done
 - Google Ads 串接: 不在 V1 範圍

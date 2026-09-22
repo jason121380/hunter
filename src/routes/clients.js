@@ -22,9 +22,9 @@ async function mapWithLimit(items, limit, worker) {
   return results;
 }
 
-clientsRouter.get('/clients', async (_req, res, next) => {
+clientsRouter.get('/clients', async (req, res, next) => {
   try {
-    const clients = await listClients();
+    const clients = await listClients(req.user);
 
     const enriched = await mapWithLimit(clients, CONCURRENCY, async client => {
       try {
