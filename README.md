@@ -18,7 +18,7 @@ GitHub + Railway 正式化遷移專案。
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL 連線字串（建議用 Railway 私有網址 `*.railway.internal`） |
 | `SESSION_SECRET` | 登入 Session 簽章金鑰，建議 32 字元以上隨機字串 |
-| `DEFAULT_ADMIN_PASSWORD` | 首次部署建立管理員用，**至少 4 字元**；未設定則不會建立任何帳號 |
+| `DEFAULT_ADMIN_PASSWORD` | 首次部署建立管理員用，**至少 6 字元**；未設定則不會建立任何帳號 |
 | `META_ACCESS_TOKEN` | Meta Marketing API 權杖 |
 | `META_APP_ID` / `META_APP_SECRET` | Token 檢查與長效交換用 |
 
@@ -45,7 +45,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 舊版本會自動建立密碼為 `1234` 的 `admin` 帳號。該密碼的雜湊仍留在資料庫中，
 新版本不會自動更動既有帳號，必須手動輪替一次：
 
-1. 在 Railway Variables 設定 `DEFAULT_ADMIN_PASSWORD`（至少 4 字元）與
+1. 在 Railway Variables 設定 `DEFAULT_ADMIN_PASSWORD`（至少 6 字元）與
    `DEFAULT_ADMIN_PASSWORD_ROTATE=true`。
 2. 重新部署，log 出現 `"passwordRotated":true` 即代表完成。
 3. 把 `DEFAULT_ADMIN_PASSWORD_ROTATE` 改回 `false`（或刪除），
@@ -56,7 +56,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 僅 `ADMIN` 角色可進入，一般使用者會被導回首頁。功能：
 
 - 新增／編輯／刪除使用者，設定顯示名稱、角色、啟用狀態
-- 重設任一帳號的密碼（至少 4 字元）
+- 重設任一帳號的密碼（至少 6 字元）
 - **指派每位使用者可檢視的廣告帳號**
 
 權限模型：

@@ -6,7 +6,7 @@ import { httpError } from '../errors.js';
 const COOKIE_NAME = 'hunter_session';
 const SESSION_TTL_SECONDS = 12 * 60 * 60;
 const MIN_SECRET_LENGTH = 32;
-export const MIN_PASSWORD_LENGTH = 4;
+export const MIN_PASSWORD_LENGTH = 6;
 
 export function getSessionSecret() {
   const value = config.sessionSecret;
