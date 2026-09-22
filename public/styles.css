@@ -64,6 +64,7 @@
    ------------------------------------------------------------ */
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; min-height: 100vh; }
+body.no-scroll { overflow: hidden; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button:disabled { opacity: .5; cursor: default; }
@@ -270,10 +271,10 @@ h2 {
   font-size: var(--fs-sm);
   font-weight: 700;
 }
-.field > input, .field > select, .field > textarea,
-.dates input {
+.field > input, .field > select, .field > textarea {
   display: block;
   width: 100%;
+  min-width: 0;
   height: var(--control-h);
   margin-top: var(--s2);
   padding: 0 var(--s4);
@@ -285,7 +286,7 @@ h2 {
   transition: border-color .15s, box-shadow .15s;
 }
 .field > textarea { height: auto; min-height: 120px; padding: var(--s3) var(--s4); resize: vertical; }
-.field > input:focus, .field > select:focus, .field > textarea:focus, .dates input:focus {
+.field > input:focus, .field > select:focus, .field > textarea:focus {
   outline: none;
   border-color: var(--brand);
   box-shadow: var(--focus-ring);
@@ -300,14 +301,168 @@ h2 {
 }
 .hint { margin-top: var(--s2); color: var(--text-3); font-size: var(--fs-xs); }
 
-.dates {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s3);
+
+/* ------------------------------------------------------------
+   統計區間：快選 + 區間欄位
+   ------------------------------------------------------------ */
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
   margin-top: var(--s5);
 }
-.dates label { font-size: var(--fs-sm); font-weight: 700; }
-@media (max-width: 430px) { .dates { grid-template-columns: 1fr; } }
+.chip {
+  min-height: 44px;
+  padding: 0 var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.chip:hover { border-color: #d5d7db; }
+.chip.active { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-strong); }
+
+.range-field {
+  width: 100%;
+  min-width: 0;
+  margin-top: var(--s3);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-align: left;
+  transition: border-color .15s, box-shadow .15s;
+}
+.range-field:hover { border-color: #d5d7db; }
+.range-field:active { border-color: var(--brand); box-shadow: var(--focus-ring); }
+.range-part { min-width: 0; display: grid; gap: 2px; }
+.range-part small { color: var(--text-3); font-size: var(--fs-xs); font-weight: 600; }
+.range-part b {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.range-field svg { width: 18px; height: 18px; fill: none; stroke: var(--text-3); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.range-field .range-cal { width: 20px; height: 20px; stroke: var(--brand); }
+.range-meta { margin-top: var(--s2); color: var(--text-3); font-size: var(--fs-xs); }
+
+/* ------------------------------------------------------------
+   底部彈出面板（Bottom sheet）與月曆
+   ------------------------------------------------------------ */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 17, 17, .38);
+  animation: fade-in .18s ease-out;
+}
+.sheet-panel {
+  position: relative;
+  width: min(100%, var(--app-w));
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: var(--s3) var(--s5) calc(var(--s5) + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+  animation: sheet-up .24s cubic-bezier(.2, .8, .2, 1);
+}
+.sheet-grip { width: 40px; height: 4px; margin: 0 auto var(--s3); border-radius: 2px; background: var(--line); }
+.sheet-actions { display: grid; grid-template-columns: 1fr 2fr; gap: var(--s3); margin-top: var(--s4); }
+@keyframes sheet-up { from { transform: translateY(100%); } }
+@keyframes fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sheet-panel, .sheet-backdrop { animation: none; } }
+
+.cal-head {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  margin-bottom: var(--s2);
+}
+.cal-head strong { text-align: center; font-size: var(--fs-lg); font-weight: 800; font-variant-numeric: tabular-nums; }
+.cal-head .icon-btn:disabled { opacity: .25; }
+.cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-week span {
+  padding: var(--s2) 0;
+  text-align: center;
+  color: var(--text-3);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+.cal-grid { row-gap: var(--s1); }
+.day {
+  position: relative;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: grid;
+  place-items: center;
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+.day span {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  transition: background .12s;
+}
+.day:not(:disabled):hover span { background: var(--surface-2); }
+.day:disabled { color: var(--text-3); opacity: .45; cursor: default; }
+.day.is-today span { color: var(--brand-strong); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--brand-line); }
+
+/* 區間色帶：起點畫右半、終點畫左半、中間整格，連成一條 */
+.day.in-range::before, .day.has-end::before, .day.is-end::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  background: var(--brand-soft);
+}
+.day.has-end::before { left: 50%; }
+.day.is-end::before { right: 50%; }
+.day.is-start.is-end::before { display: none; }
+.cal-grid > :nth-child(7n + 1)::before { border-radius: 20px 0 0 20px; }
+.cal-grid > :nth-child(7n)::before { border-radius: 0 20px 20px 0; }
+.day.in-range span { color: var(--brand-strong); }
+.day.is-start span, .day.is-end span,
+.day.is-start:hover span, .day.is-end:hover span {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: none;
+}
+.cal-hint {
+  min-height: 1.55em;
+  margin: var(--s3) 0 0;
+  text-align: center;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ------------------------------------------------------------
    成效結果

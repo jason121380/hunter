@@ -2,6 +2,7 @@ const $ = id => document.getElementById(id);
 const state = {
   client: null, campaign: null, campaigns: [], adsets: [],
   selected: new Set(), history: ['home'], mode: null,
+  range: null,
 };
 
 const STATUS_LABEL = {
@@ -100,7 +101,7 @@ $('individual').onclick = async () => {
 
 $('unified').onclick = () => {
   state.mode = 'unified';
-  setDefaultDates();
+  preparePeriod();
   $('periodMode').textContent = '統一回報';
   screen('period');
 };
@@ -145,26 +146,162 @@ function renderAdsets() {
 $('adsetNext').onclick = () => {
   if (!state.selected.size) return toast('請至少選一個廣告組合');
   state.mode = 'individual';
-  setDefaultDates();
+  preparePeriod();
   $('periodMode').textContent = '個別回報';
   screen('period');
 };
 
-function setDefaultDates() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  $('start').value = `${y}-${m}-01`;
-  $('end').value = `${y}-${m}-${day}`;
+// ── 統計區間 ─────────────────────────────────────────────
+// 不用原生 <input type="date">：iOS 的原生欄位有固定最小寬度會撐破版面，
+// 選擇器也無法套用系統樣式。日期一律用本地時間的 YYYY-MM-DD 字串處理，
+// 字串可直接比大小，也避免 toISOString() 轉成 UTC 造成差一天。
+
+const pad = v => String(v).padStart(2, '0');
+const toYmd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const fmtYmd = s => s.replaceAll('-', '/');
+const dayCount = (a, b) => Math.round((fromYmd(b) - fromYmd(a)) / 86400000) + 1;
+function today() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+
+const PRESETS = {
+  mtd: t => [new Date(t.getFullYear(), t.getMonth(), 1), t],
+  'last-month': t => [new Date(t.getFullYear(), t.getMonth() - 1, 1), new Date(t.getFullYear(), t.getMonth(), 0)],
+  '7d': t => [addDays(t, -6), t],
+  '30d': t => [addDays(t, -29), t],
+};
+
+function presetRange(key) {
+  const [a, b] = PRESETS[key](today());
+  return [toYmd(a), toYmd(b)];
+}
+
+function matchPreset(start, end) {
+  return Object.keys(PRESETS).find(key => {
+    const [a, b] = presetRange(key);
+    return a === start && b === end;
+  }) || null;
+}
+
+function setRange(start, end) {
+  state.range = { start, end };
+  const preset = matchPreset(start, end);
+  $('startLabel').textContent = fmtYmd(start);
+  $('endLabel').textContent = fmtYmd(end);
+  $('rangeMeta').textContent = `共 ${dayCount(start, end)} 天`;
+  document.querySelectorAll('.chip[data-preset]').forEach(chip => {
+    const on = chip.dataset.preset === preset;
+    chip.classList.toggle('active', on);
+    chip.setAttribute('aria-pressed', String(on));
+  });
+  clearResult();
+}
+
+function clearResult() {
   $('result').innerHTML = '';
   $('result').className = 'result';
 }
 
+// 進入區間畫面：保留這次登入中選過的區間（連續回報多個客戶時不用重選），
+// 第一次進來預設「本月至今」。
+function preparePeriod() {
+  if (state.range) setRange(state.range.start, state.range.end);
+  else setRange(...presetRange('mtd'));
+}
+
+document.querySelectorAll('.chip[data-preset]').forEach(chip => {
+  chip.onclick = () => setRange(...presetRange(chip.dataset.preset));
+});
+
+const cal = { view: null, start: null, end: null };
+
+function openPicker() {
+  cal.start = state.range.start;
+  cal.end = state.range.end;
+  const end = fromYmd(cal.end);
+  cal.view = new Date(end.getFullYear(), end.getMonth(), 1);
+  renderCalendar();
+  $('sheet').hidden = false;
+  document.body.classList.add('no-scroll');
+}
+
+function closePicker() {
+  $('sheet').hidden = true;
+  document.body.classList.remove('no-scroll');
+}
+
+function renderCalendar() {
+  const y = cal.view.getFullYear();
+  const m = cal.view.getMonth();
+  const t = today();
+  const todayYmd = toYmd(t);
+
+  $('calTitle').textContent = `${y} 年 ${m + 1} 月`;
+  $('calNext').disabled = y > t.getFullYear() || (y === t.getFullYear() && m >= t.getMonth());
+
+  const lead = new Date(y, m, 1).getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const ranged = cal.start && cal.end && cal.start !== cal.end;
+
+  let html = '<span class="day-blank"></span>'.repeat(lead);
+  for (let d = 1; d <= days; d += 1) {
+    const ymd = `${y}-${pad(m + 1)}-${pad(d)}`;
+    const cls = ['day'];
+    if (ymd === cal.start) cls.push('is-start');
+    if (ymd === cal.end) cls.push('is-end');
+    if (ranged && ymd === cal.start) cls.push('has-end');
+    if (ranged && ymd > cal.start && ymd < cal.end) cls.push('in-range');
+    if (ymd === todayYmd) cls.push('is-today');
+    const future = ymd > todayYmd;
+    html += `<button type="button" class="${cls.join(' ')}" data-ymd="${ymd}"${future ? ' disabled' : ''} aria-label="${m + 1} 月 ${d} 日"><span>${d}</span></button>`;
+  }
+  $('calGrid').innerHTML = html;
+
+  $('calHint').textContent = !cal.start
+    ? '請選擇開始日期'
+    : !cal.end
+      ? `${fmtYmd(cal.start)} 起，請選擇結束日期`
+      : `${fmtYmd(cal.start)} – ${fmtYmd(cal.end)}，共 ${dayCount(cal.start, cal.end)} 天`;
+  $('calApply').disabled = !cal.start;
+}
+
+$('rangeField').onclick = openPicker;
+
+$('calGrid').onclick = e => {
+  const btn = e.target.closest('.day');
+  if (!btn || btn.disabled) return;
+  const ymd = btn.dataset.ymd;
+  if (!cal.start || cal.end) { cal.start = ymd; cal.end = null; }
+  else if (ymd < cal.start) { cal.start = ymd; }
+  else { cal.end = ymd; }
+  renderCalendar();
+};
+
+$('calPrev').onclick = () => {
+  cal.view = new Date(cal.view.getFullYear(), cal.view.getMonth() - 1, 1);
+  renderCalendar();
+};
+$('calNext').onclick = () => {
+  cal.view = new Date(cal.view.getFullYear(), cal.view.getMonth() + 1, 1);
+  renderCalendar();
+};
+
+$('calApply').onclick = () => {
+  if (!cal.start) return;
+  setRange(cal.start, cal.end || cal.start);
+  closePicker();
+};
+
+$('sheet').addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) closePicker();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('sheet').hidden) closePicker();
+});
+
 $('run').onclick = async () => {
-  const startDate = $('start').value;
-  const endDate = $('end').value;
-  if (!startDate || !endDate) return toast('請選擇日期');
+  if (!state.range) return toast('請選擇日期');
+  const { start: startDate, end: endDate } = state.range;
   loading(true);
   try {
     const payload = state.mode === 'unified'

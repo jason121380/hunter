@@ -119,7 +119,44 @@
 <div class="hint">欄位提示</div>
 ```
 
-`.dates` 是兩欄日期選擇器，430px 以下自動變單欄。
+不使用原生 `<input type="date">`（iOS 的原生欄位有固定最小寬度會撐破版面，選擇器樣式也無法統一），日期一律用下面的區間選擇器。
+
+### 統計區間選擇器
+
+```html
+<div class="presets">
+  <button class="chip active" data-preset="mtd">本月至今</button> …
+</div>
+<button class="range-field">
+  <span class="range-part"><small>開始日期</small><b>2026/09/01</b></span>
+  <svg class="range-arrow">…</svg>
+  <span class="range-part"><small>結束日期</small><b>2026/09/22</b></span>
+  <svg class="range-cal">…</svg>
+</button>
+<div class="range-meta">共 22 天</div>
+```
+
+- `.chip`：44px 高的膠囊按鈕，`.active` 為選取態。
+- `.range-field`：點擊開啟底部月曆；四欄 grid 的日期欄用 `minmax(0, 1fr)`，窄螢幕不會撐破。
+- 日期顯示格式 `YYYY/MM/DD`；程式內部一律用本地時間的 `YYYY-MM-DD` 字串（可直接比大小，避免 UTC 差一天）。
+
+### 底部彈出面板（Bottom sheet）與月曆
+
+```html
+<div class="sheet">
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true">
+    <div class="sheet-grip"></div>
+    …內容…
+    <div class="sheet-actions"><button class="outline" data-close>取消</button><button class="primary">套用</button></div>
+  </div>
+</div>
+```
+
+- 帶 `data-close` 的元素點擊即關閉；開啟時 `body.no-scroll` 鎖住背景捲動。
+- 月曆：`.cal-head`（上／下個月 + 標題）、`.cal-week`（日～六）、`.cal-grid` 內每格 `.day`。
+- 狀態 class：`.is-start`、`.is-end`、`.in-range`、`.has-end`（起點且有終點）、`.is-today`；未來日期 `disabled`。
+- 區間色帶以 `::before` 畫出：起點右半、終點左半、中間整格，在每週第一／最後一格收圓角。
 
 ### 成效結果
 
@@ -154,7 +191,8 @@
 
 - viewport 含 `viewport-fit=cover`；頂欄與底部內距都加了 `env(safe-area-inset-*)`，瀏海與 Home 條不會壓到內容。
 - 所有可點元素至少 44px 高；`touch-action: manipulation` 移除點擊延遲；關閉 tap highlight。
-- 輸入框 16px，避免 iOS 聚焦時自動放大。
+- 輸入框 16px，避免 iOS 聚焦時自動放大；輸入框與 grid 欄位加 `min-width: 0`，避免內容撐破版面。
+- 不用原生日期欄位（見「統計區間選擇器」）。
 - 頂欄半透明毛玻璃（`backdrop-filter`），捲動時內容從底下滑過。
 - PWA：`manifest.webmanifest`（standalone、直向、品牌色）+ `sw.js` + `icons/`。Service Worker 不快取登入相關內容，靜態檔網路優先。
 - 圖示來源是 `icons/icon.svg`；PNG 由它渲染產生（192、512、maskable 512、apple-touch 180）。改圖示時四個 PNG 要一起重產。
@@ -174,4 +212,4 @@
 - 不用 emoji 當圖示。
 - 不用 `!important`（`[hidden]` 是唯一例外，為了壓過任何 display 設定）。
 - 不寫 12px 以下的字。
-- 不加動畫，除非它傳達狀態（spinner、按下縮放）。
+- 不加動畫，除非它傳達狀態（spinner、按下縮放、面板滑出）。

@@ -69,14 +69,45 @@
       <section id="period" class="screen">
         <small id="periodMode"></small>
         <h1>選擇統計區間</h1>
-        <div class="dates">
-          <label>開始日期<input id="start" type="date"></label>
-          <label>結束日期<input id="end" type="date"></label>
+        <div class="presets" role="group" aria-label="快速選擇區間">
+          <button type="button" class="chip" data-preset="mtd">本月至今</button>
+          <button type="button" class="chip" data-preset="last-month">上個月</button>
+          <button type="button" class="chip" data-preset="7d">近 7 天</button>
+          <button type="button" class="chip" data-preset="30d">近 30 天</button>
         </div>
+        <button id="rangeField" class="range-field" type="button" aria-haspopup="dialog">
+          <span class="range-part"><small>開始日期</small><b id="startLabel">—</b></span>
+          <svg class="range-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+          <span class="range-part"><small>結束日期</small><b id="endLabel">—</b></span>
+          <svg class="range-cal" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>
+        </button>
+        <div id="rangeMeta" class="range-meta"></div>
         <button id="run" class="primary" type="button">讀取成效</button>
         <div id="result" class="result"></div>
       </section>
     </main>
+    <div id="sheet" class="sheet" hidden>
+      <div class="sheet-backdrop" data-close></div>
+      <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="calTitle">
+        <div class="sheet-grip" aria-hidden="true"></div>
+        <div class="cal-head">
+          <button id="calPrev" class="icon-btn" type="button" aria-label="上個月">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+          <strong id="calTitle"></strong>
+          <button id="calNext" class="icon-btn" type="button" aria-label="下個月">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="cal-week" aria-hidden="true"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+        <div id="calGrid" class="cal-grid"></div>
+        <p id="calHint" class="cal-hint" aria-live="polite"></p>
+        <div class="sheet-actions">
+          <button id="calCancel" class="outline" type="button" data-close>取消</button>
+          <button id="calApply" class="primary" type="button">套用</button>
+        </div>
+      </div>
+    </div>
     <div id="loading" class="loading" hidden><span class="spinner" aria-hidden="true"></span><span>讀取資料中…</span></div>
     <div id="toast" class="toast" role="status" hidden></div>
   </div>
