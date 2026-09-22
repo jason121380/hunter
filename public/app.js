@@ -49,37 +49,73 @@ function back() {
 }
 
 $('back').onclick = back;
-$('refresh').onclick = loadClients;
+$('refresh').onclick = () => loadClients({ refresh: true });
 $('logout').onclick = async () => {
   await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
   location.href = '/login';
 };
 $('adminLink').onclick = () => { location.href = '/admin'; };
 
-async function loadClients() {
-  loading(true);
+// 首頁分兩段載入：客戶清單只查資料庫（很快），先畫出來；
+// 「進行中廣告數」要逐一問 Meta（慢），抓到再填進去。
+let clientsLoadId = 0;
+
+async function loadClients({ refresh = false } = {}) {
+  const loadId = ++clientsLoadId;
+  if (!$('clients').children.length) $('clients').innerHTML = skeletonCards(4);
+
+  let clients;
   try {
-    const { clients } = await api('/api/clients');
-    $('clients').innerHTML = clients.map(c => `
-      <button class="client" type="button" data-id="${esc(c.id)}">
-        <b>${esc(c.name)}</b>
-        <span class="meta">${counts(c)}</span>
-      </button>`).join('') || '<p class="meta">尚無客戶資料</p>';
-    document.querySelectorAll('.client').forEach(b => {
-      b.onclick = () => selectClient(clients.find(c => c.id === b.dataset.id));
-    });
+    ({ clients } = await api('/api/clients'));
   } catch (e) {
-    $('clients').innerHTML = `<div class="error-box">${esc(e.message)}</div>`;
+    if (loadId === clientsLoadId) $('clients').innerHTML = `<div class="error-box">${esc(e.message)}</div>`;
+    return;
+  }
+  if (loadId !== clientsLoadId) return;
+
+  $('clients').innerHTML = clients.map(c => `
+    <button class="client" type="button" data-id="${esc(c.id)}">
+      <b>${esc(c.name)}</b>
+      <span class="meta" data-counts><span class="skeleton" aria-label="讀取中"></span></span>
+    </button>`).join('') || '<p class="meta">尚無客戶資料</p>';
+  document.querySelectorAll('.client').forEach(b => {
+    b.onclick = () => selectClient(clients.find(c => c.id === b.dataset.id));
+  });
+  if (!clients.length) return;
+
+  $('refresh').classList.add('spinning');
+  try {
+    const { counts, updatedAt } = await api(`/api/clients/campaign-counts${refresh ? '?refresh=1' : ''}`);
+    if (loadId !== clientsLoadId) return;
+    document.querySelectorAll('.client').forEach(b => {
+      b.querySelector('[data-counts]').textContent = countsText(counts[b.dataset.id]);
+    });
+    $('countsInfo').textContent = updatedAt ? `廣告數更新於 ${hhmm(updatedAt)}，按右上 ↻ 取得最新` : '';
+  } catch {
+    if (loadId !== clientsLoadId) return;
+    document.querySelectorAll('[data-counts]').forEach(el => { el.textContent = countsText(null); });
   } finally {
-    loading(false);
+    if (loadId === clientsLoadId) $('refresh').classList.remove('spinning');
   }
 }
 
-function counts(c) {
-  const n = c.campaignCounts;
+function skeletonCards(n) {
+  return Array.from({ length: n }, () => `
+    <div class="client client--skeleton" aria-hidden="true">
+      <span class="skeleton skeleton--title"></span>
+      <span class="skeleton"></span>
+    </div>`).join('');
+}
+
+function countsText(n) {
   return n
     ? `進行中廣告：${n.total} 組 ｜ 私訊 ${n.message} ｜ 流量 ${n.traffic}`
     : '廣告數讀取失敗，仍可進入回報';
+}
+
+function hhmm(iso) {
+  const d = new Date(iso);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function selectClient(c) {

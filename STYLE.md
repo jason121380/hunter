@@ -177,7 +177,10 @@
 
 ### 回饋
 
-- `.loading`：全螢幕遮罩 + `.spinner`（尊重 `prefers-reduced-motion`，只放慢不停止）
+- `.loading`：全螢幕遮罩 + `.spinner`（尊重 `prefers-reduced-motion`，只放慢不停止）。用在「使用者按了按鈕、必須等結果」的情境。
+- `.skeleton`：灰色閃爍佔位條，`.skeleton--title` 為較粗的標題版；`.client--skeleton` 是整張佔位卡片。用在「畫面可以先出來、部分資料晚點補」的情境，比全螢幕遮罩好：使用者不用等就能操作。
+- `.icon-btn.spinning`：圖示按鈕正在處理（例如 ↻ 重新整理時旋轉）。
+- `.counts-info`：清單上方的輔助說明（例如資料更新時間），內容為空時自動隱藏。
 - `.toast`：底部浮出訊息，會避開安全區
 - `.error-box`：區塊內的錯誤（橘底）；`.form-error`：表單下方的錯誤（預設隱藏，JS 切 `display`）
 
@@ -212,4 +215,4 @@
 - 不用 emoji 當圖示。
 - 不用 `!important`（`[hidden]` 是唯一例外，為了壓過任何 display 設定）。
 - 不寫 12px 以下的字。
-- 不加動畫，除非它傳達狀態（spinner、按下縮放、面板滑出）。
+- 不加動畫，除非它傳達狀態（spinner、skeleton、按下縮放、面板滑出）。

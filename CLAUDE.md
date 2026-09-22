@@ -37,7 +37,7 @@ src/
     access.js        每位使用者可看哪些客戶（授權邊界）
     users.js         後台的使用者 CRUD 與客戶指派
     meta.js          Graph API 客戶端（路徑白名單、分頁主機檢查、token 遮蔽）
-    ads.js           campaigns / adsets / insights（含 60 秒快取）
+    ads.js           campaigns / adsets / insights；報表用 60 秒快取，首頁廣告數另有 10 分鐘 stale-while-revalidate 快取
     unified.js       統一回報
     reports.js       純函式：判斷廣告類型、組報表
     clients.js       客戶清單（依使用者權限過濾）
@@ -64,6 +64,8 @@ migrations/          schema 唯一來源
 6. **Secret 不進 repo**。`.env.example` 只放空值與說明。
 7. **不要關掉資料庫 TLS 驗證**來解決連線問題；用 `.railway.internal` 內部網址。
 8. **靜態資源預設在登入牆之後**。要公開的檔案必須加進 `server.js` 的 `PUBLIC_ASSETS` 清單，並確認內容不敏感。
+
+9. **報表不可使用首頁的長快取**。`campaignCounts()`（10 分鐘）只給首頁顯示數字用；統一／個別回報必須走 `activeCampaigns()`（60 秒），否則剛上線的廣告會漏報。
 
 ## 程式慣例
 

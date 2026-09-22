@@ -303,6 +303,33 @@ h2 {
 
 
 /* ------------------------------------------------------------
+   載入佔位（Skeleton）
+   ------------------------------------------------------------ */
+.skeleton {
+  display: inline-block;
+  width: 190px;
+  max-width: 70%;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--line-soft) 25%, var(--surface-2) 50%, var(--line-soft) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  vertical-align: middle;
+}
+.skeleton--title { width: 140px; height: 16px; margin-bottom: var(--s1); }
+.client--skeleton { cursor: default; }
+.client--skeleton:active { transform: none; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.counts-info { margin-top: var(--s4); color: var(--text-3); font-size: var(--fs-xs); }
+.counts-info:empty { display: none; }
+.counts-info + .list { margin-top: var(--s2); }
+.icon-btn.spinning svg { animation: spin .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation-duration: 3s; }
+  .icon-btn.spinning svg { animation-duration: 2.2s; }
+}
+
+/* ------------------------------------------------------------
    統計區間：快選 + 區間欄位
    ------------------------------------------------------------ */
 .presets {

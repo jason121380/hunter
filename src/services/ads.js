@@ -39,18 +39,74 @@ async function fetchActiveCampaigns(accountId) {
     .filter(x => x.type !== 'other');
 }
 
-// 首頁一次要顯示所有客戶的廣告數，短期快取可大幅降低 Graph API 呼叫量與觸發限流的機率。
-export async function activeCampaigns(accountId) {
+// 報表與廣告清單用：60 秒短快取，確保回報內容接近即時。
+export async function activeCampaigns(accountId, { force = false } = {}) {
   const id = requireMetaAccountId(accountId);
   const now = Date.now();
   const cached = campaignCache.get(id);
-  if (cached && cached.expiresAt > now) return cached.value;
+  if (!force && cached && cached.expiresAt > now) return cached.value;
 
   const value = await fetchActiveCampaigns(id);
 
   if (campaignCache.size >= CAMPAIGN_CACHE_MAX) campaignCache.clear();
-  campaignCache.set(id, { value, expiresAt: now + CAMPAIGN_CACHE_TTL_MS });
+  campaignCache.set(id, { value, expiresAt: Date.now() + CAMPAIGN_CACHE_TTL_MS });
   return value;
+}
+
+// ── 首頁「進行中廣告數」專用快取 ─────────────────────────────
+// 首頁要一次算出所有帳號的廣告數，逐一打 Graph API 很慢，所以另外用較長的快取：
+//   10 分鐘內        → 直接用快取
+//   10 分鐘 ～ 6 小時 → 先回傳舊值，同時在背景更新（stale-while-revalidate）
+//   超過 6 小時       → 等待重新抓取
+// 這個快取只影響首頁顯示的數字，不影響報表：報表走上面 60 秒的 activeCampaigns()。
+const COUNTS_FRESH_MS = 10 * 60 * 1000;
+const COUNTS_MAX_STALE_MS = 6 * 60 * 60 * 1000;
+// 使用者按「重新整理」會略過快取，但同一帳號 30 秒內只重抓一次，避免連按打爆 Meta 限流。
+const COUNTS_FORCE_MIN_AGE_MS = 30 * 1000;
+const countsCache = new Map();
+const countsInflight = new Map();
+
+function summarize(campaigns) {
+  const message = campaigns.filter(x => x.type === 'message').length;
+  const traffic = campaigns.filter(x => x.type === 'traffic').length;
+  return { message, traffic, total: message + traffic };
+}
+
+function refreshCounts(id) {
+  if (countsInflight.has(id)) return countsInflight.get(id);
+
+  const started = Date.now();
+  const promise = activeCampaigns(id, { force: true })
+    .then(campaigns => {
+      const entry = { value: summarize(campaigns), fetchedAt: Date.now() };
+      if (countsCache.size >= CAMPAIGN_CACHE_MAX) countsCache.clear();
+      countsCache.set(id, entry);
+      return { ...entry, ms: Date.now() - started };
+    })
+    .finally(() => countsInflight.delete(id));
+
+  countsInflight.set(id, promise);
+  return promise;
+}
+
+export async function campaignCounts(accountId, { force = false } = {}) {
+  const id = requireMetaAccountId(accountId);
+  const entry = countsCache.get(id);
+  const age = entry ? Date.now() - entry.fetchedAt : Infinity;
+
+  const bypass = force && age >= COUNTS_FORCE_MIN_AGE_MS;
+  if (!bypass && age < COUNTS_FRESH_MS) {
+    return { counts: entry.value, fetchedAt: entry.fetchedAt, source: 'cache', ms: 0 };
+  }
+  if (!bypass && age < COUNTS_MAX_STALE_MS) {
+    refreshCounts(id).catch(error => {
+      console.error('[counts] background refresh failed', id, error.message);
+    });
+    return { counts: entry.value, fetchedAt: entry.fetchedAt, source: 'stale', ms: 0 };
+  }
+
+  const fresh = await refreshCounts(id);
+  return { counts: fresh.value, fetchedAt: fresh.fetchedAt, source: 'fresh', ms: fresh.ms };
 }
 
 export async function activeAdSets(campaignId) {
