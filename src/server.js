@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { migrate } from './migrate.js';
+import { runStartupChecks } from './startup-check.js';
 import { getTokenStatus } from './services/meta.js';
 import { adsRouter } from './routes/ads.js';
 import { clientsRouter } from './routes/clients.js';
@@ -38,6 +39,7 @@ app.use((error, _req, res, _next) => {
 });
 
 await migrate();
+await runStartupChecks();
 
 app.listen(config.port, '0.0.0.0', () => {
   console.log(`Hunter ads report system listening on :${config.port}`);
