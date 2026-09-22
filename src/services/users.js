@@ -1,11 +1,10 @@
 import { query, withTransaction } from '../db.js';
 import { httpError } from '../errors.js';
-import { hashPassword } from './auth.js';
+import { hashPassword, MIN_PASSWORD_LENGTH } from './auth.js';
 import { requireId, requireEnum, requireText, optionalText } from '../validate.js';
 
 const ROLES = ['ADMIN', 'STAFF'];
 const USERNAME_RE = /^[A-Za-z0-9_.-]{3,50}$/;
-const MIN_PASSWORD_LENGTH = 12;
 
 function requireUsername(value) {
   const text = String(value ?? '').trim();
@@ -84,15 +83,18 @@ export async function listAssignableClients() {
     FROM clients c
     JOIN ad_accounts a ON a.client_id = c.id
     WHERE c.active = TRUE AND a.active = TRUE AND a.platform = 'META'
-    ORDER BY c.sort_order ASC, c.name ASC
   `);
 
-  return result.rows.map(row => ({
-    id: String(row.id),
-    name: row.name,
-    accountId: row.external_account_id,
-    metaName: row.meta_name || '',
-  }));
+  // 指派用的清單照字元順序排序，不用匯入順序；排序在這裡做，
+  // 結果才不會隨資料庫的 collation 設定而改變。
+  return result.rows
+    .map(row => ({
+      id: String(row.id),
+      name: row.name,
+      accountId: row.external_account_id,
+      metaName: row.meta_name || '',
+    }))
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
 async function replaceUserClients(client, userId, clientIds) {

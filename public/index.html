@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="app">
-    <header><button id="back">☰</button><strong id="title">廣告數據回報</strong><button id="refresh">↻</button></header>
+    <header><button id="back" hidden>‹</button><strong id="title">廣告數據回報</strong><button id="refresh">↻</button></header>
     <main>
       <section id="home" class="screen active">
         <small>廣告成效管理</small><h1>目前進行中的客戶</h1>
@@ -30,7 +30,7 @@
         <button id="run" class="primary">讀取成效</button><div id="result"></div>
       </section>
     </main>
-    <div id="loading" class="loading" hidden>讀取資料中…</div>
+    <div id="loading" class="loading" hidden><span class="spinner" aria-hidden="true"></span><span>讀取資料中…</span></div>
     <div id="toast" class="toast" hidden></div>
   </div>
   <script src="/app.js"></script>

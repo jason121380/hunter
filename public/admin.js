@@ -129,7 +129,7 @@ function openCreate() {
         <option value="ADMIN">管理員</option>
       </select>
     </label>
-    <label class="field">密碼（至少 12 字元）
+    <label class="field">密碼（至少 4 字元）
       <input type="password" id="f_password" autocomplete="new-password">
     </label>
     <label class="field">可檢視的廣告帳號</label>
@@ -206,7 +206,7 @@ function openEdit(user) {
       <button class="outline" type="button" id="cancel">取消</button>
     </div>
 
-    <label class="field" style="margin-top:26px">重設密碼（至少 12 字元）
+    <label class="field" style="margin-top:26px">重設密碼（至少 4 字元）
       <input type="password" id="f_password" autocomplete="new-password" placeholder="留空則不變更">
     </label>
     <div class="actions">

@@ -44,7 +44,10 @@
     .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
     .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:12px;z-index:30;max-width:90vw}
     .error-box{margin-top:16px;padding:13px;border:1px solid #f2c7b0;border-radius:13px;background:#fff7f2;color:#9a3e00;line-height:1.55}
-    .loading{position:fixed;inset:0;background:#ffffffd9;z-index:20;display:grid;place-items:center;font-weight:800}
+    .loading{position:fixed;inset:0;background:#ffffffd9;z-index:20;display:grid;place-items:center;align-content:center;gap:14px;font-weight:800}
+    .spinner{width:34px;height:34px;border-radius:50%;border:3px solid #ffe0cc;border-top-color:#ff6500;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media (prefers-reduced-motion:reduce){.spinner{animation-duration:2.2s}}
     [hidden]{display:none!important}
   </style>
 </head>
@@ -71,7 +74,7 @@
       <section id="panel" class="panel" hidden></section>
     </main>
   </div>
-  <div id="loading" class="loading" hidden>處理中…</div>
+  <div id="loading" class="loading" hidden><span class="spinner" aria-hidden="true"></span><span>處理中…</span></div>
   <div id="toast" class="toast" hidden></div>
   <script src="/admin.js"></script>
 </body>

@@ -18,16 +18,19 @@ export async function listClients(user) {
           WHERE uc.client_id = c.id AND uc.user_id = $2
         )
       )
-    ORDER BY c.sort_order ASC, c.name ASC
   `, [admin, admin ? null : user.uid]);
 
-  return result.rows.map(row => ({
-    id: String(row.id),
-    name: row.name,
-    accountId: row.external_account_id,
-    metaName: row.meta_name,
-    displayName: row.display_name || row.name,
-  }));
+  // 照字元順序排序（匯入順序沒有意義）；排序在這裡做，結果才不會隨
+  // 資料庫的 collation 設定而改變。
+  return result.rows
+    .map(row => ({
+      id: String(row.id),
+      name: row.name,
+      accountId: row.external_account_id,
+      metaName: row.meta_name,
+      displayName: row.display_name || row.name,
+    }))
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
 export async function getClient(clientId) {

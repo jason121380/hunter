@@ -12,7 +12,7 @@ function toast(t){$('toast').textContent=t;$('toast').hidden=false;setTimeout(()
 function screen(id,push=true){
   document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));
   if(push&&state.history.at(-1)!==id)state.history.push(id);
-  $('back').textContent=id==='home'?'☰':'‹'; $('refresh').hidden=id!=='home'; scrollTo(0,0);
+  $('back').textContent='‹'; $('back').hidden=id==='home'; $('refresh').hidden=id!=='home'; scrollTo(0,0);
 }
 function back(){if(state.history.length<=1)return;state.history.pop();screen(state.history.at(-1),false)}
 $('back').onclick=back;$('refresh').onclick=loadClients;
