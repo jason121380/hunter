@@ -1,7 +1,11 @@
 import { query } from '../db.js';
+import { httpError } from '../errors.js';
+
+const MAX_ACCOUNTS = 500;
 
 export async function importMetaAccounts(accounts) {
-  if (!Array.isArray(accounts)) throw new Error('accounts 必須是陣列。');
+  if (!Array.isArray(accounts)) throw httpError(400, 'accounts 必須是陣列。');
+  if (accounts.length > MAX_ACCOUNTS) throw httpError(400, `accounts 最多 ${MAX_ACCOUNTS} 筆。`);
 
   const imported = [];
 
@@ -13,6 +17,12 @@ export async function importMetaAccounts(accounts) {
     const active = item.active !== false;
 
     if (!accountId || !displayName) continue;
+    if (!/^act_\d{1,20}$/.test(accountId)) {
+      throw httpError(400, `accountId 格式不正確：${accountId.slice(0, 40)}`);
+    }
+    if (displayName.length > 200 || metaName.length > 200) {
+      throw httpError(400, '名稱長度不可超過 200 字元。');
+    }
 
     const existing = await query(`
       SELECT a.id AS ad_account_id, a.client_id

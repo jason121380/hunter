@@ -17,29 +17,11 @@
 <body>
   <main class="wrap">
     <h1>Meta Long-Lived Token</h1>
-    <p>不需要 Google Apps Script。貼上剛從 Graph API Explorer 產生的短效 User Access Token，系統會用 Railway 內的 App ID / App Secret 交換成 Long-Lived Token。</p>
-    <div class="field"><label>Admin Key</label><input id="key" type="password" autocomplete="off"></div>
-    <div class="field"><label>短效 User Access Token</label><input id="short" type="password" autocomplete="off" spellcheck="false"><small style="display:block;margin-top:6px;color:#777">Token 會以密碼形式隱藏，避免截圖外洩。</small></div>
-    <button id="go">交換成 Long-Lived Token</button>
+    <p>貼上剛從 Graph API Explorer 產生的短效 User Access Token，系統會用 Railway 內的 App ID / App Secret 交換成 Long-Lived Token。此頁僅限管理員（ADMIN）帳號使用。</p>
+    <div class="field"><label for="short">短效 User Access Token</label><input id="short" type="password" autocomplete="off" spellcheck="false"><small style="display:block;margin-top:6px;color:#777">Token 會以密碼形式隱藏，避免截圖外洩。</small></div>
+    <button id="go" type="button">交換成 Long-Lived Token</button>
     <section id="result" class="result"></section>
   </main>
-  <script>
-    const result=document.getElementById('result');
-    document.getElementById('go').onclick=async()=>{
-      result.className='result show'; result.innerHTML='處理中…';
-      try{
-        const res=await fetch('/api/admin/exchange-meta-token',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','x-admin-key':document.getElementById('key').value},
-          body:JSON.stringify({shortToken:document.getElementById('short').value.trim()})
-        });
-        const data=await res.json().catch(()=>({}));
-        if(!res.ok) throw new Error(data.message||'交換失敗');
-        result.innerHTML='<div class="ok"><b>交換成功</b></div><p>有效期：約 '+(data.expiresInDays ?? '?')+' 天</p><div class="token" id="longToken"></div><button id="copy">複製 Long-Lived Token</button>';
-        document.getElementById('longToken').textContent=data.accessToken;
-        document.getElementById('copy').onclick=async()=>{await navigator.clipboard.writeText(data.accessToken);document.getElementById('copy').textContent='已複製'};
-      }catch(e){result.innerHTML='<div class="err"><b>'+String(e.message).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</b></div>'}
-    };
-  </script>
+  <script src="/token.js"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 import { metaGetAll } from './meta.js';
 import { activeCampaigns } from './ads.js';
+import { requireMetaAccountId, requireDateRange } from '../validate.js';
 import { resolveTrafficResult, buildMessageReport, buildTrafficReport } from './reports.js';
 
 const FIELDS = [
@@ -7,7 +8,10 @@ const FIELDS = [
   'actions','cost_per_action_type','results','cost_per_result'
 ].join(',');
 
-export async function buildUnifiedReport({ accountId, startDate, endDate }) {
+export async function buildUnifiedReport(input) {
+  const accountId = requireMetaAccountId(input?.accountId);
+  const { startDate, endDate } = requireDateRange(input?.startDate, input?.endDate);
+
   const campaigns = await activeCampaigns(accountId);
   const campaignIds = new Set(campaigns.map(x => x.id));
 

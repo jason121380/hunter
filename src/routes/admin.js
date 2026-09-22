@@ -3,6 +3,7 @@ import { importMetaAccounts } from '../services/admin.js';
 import { bootstrapMetaAccounts } from '../services/bootstrap.js';
 import { metaGetAll, exchangeUserToken } from '../services/meta.js';
 import { requireAdmin } from '../middleware/admin.js';
+import { httpError } from '../errors.js';
 
 export const adminRouter = Router();
 
@@ -40,6 +41,9 @@ adminRouter.post('/admin/bootstrap-meta', async (_req, res, next) => {
 adminRouter.post('/admin/exchange-meta-token', async (req, res, next) => {
   try {
     const shortToken = String(req.body?.shortToken || '').trim();
+    if (!/^[A-Za-z0-9_-]{20,1000}$/.test(shortToken)) {
+      throw httpError(400, '短效 User Access Token 格式不正確。');
+    }
     const result = await exchangeUserToken(shortToken);
     res.json(result);
   } catch (error) { next(error); }

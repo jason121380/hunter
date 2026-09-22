@@ -21,10 +21,11 @@ async function loadClients(){
   loading(true);
   try{
     const {clients}=await api('/api/clients');
-    $('clients').innerHTML=clients.map(c=>`<button class="client" data-id="${c.id}"><b>${esc(c.name)}</b><span class="meta">進行中廣告：${c.campaignCounts.total} 組 ｜ 私訊 ${c.campaignCounts.message} ｜ 流量 ${c.campaignCounts.traffic}</span></button>`).join('')||'<p>尚無客戶資料</p>';
+    $('clients').innerHTML=clients.map(c=>`<button class="client" data-id="${c.id}"><b>${esc(c.name)}</b><span class="meta">${counts(c)}</span></button>`).join('')||'<p>尚無客戶資料</p>';
     document.querySelectorAll('.client').forEach(b=>b.onclick=()=>selectClient(clients.find(c=>c.id===b.dataset.id)));
   }catch(e){$('clients').innerHTML=`<div class="error-box">${esc(e.message)}</div>`}finally{loading(false)}
 }
+function counts(c){const n=c.campaignCounts;return n?`進行中廣告：${n.total} 組 ｜ 私訊 ${n.message} ｜ 流量 ${n.traffic}`:'廣告數讀取失敗，仍可進入回報'}
 function selectClient(c){state.client=c;$('clientName').textContent=c.name;screen('mode')}
 $('individual').onclick=async()=>{state.mode='individual';loading(true);try{const d=await api(`/api/accounts/${encodeURIComponent(state.client.accountId)}/campaigns`);state.campaigns=d.campaigns;renderCampaigns();screen('campaigns')}catch(e){toast(e.message)}finally{loading(false)}};
 $('unified').onclick=()=>{state.mode='unified';setDefaultDates();$('periodMode').textContent='統一回報';screen('period')};
