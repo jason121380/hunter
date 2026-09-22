@@ -11,11 +11,21 @@ import { adsRouter } from './routes/ads.js';
 import { clientsRouter } from './routes/clients.js';
 import { reportsRouter } from './routes/reports.js';
 import { adminRouter } from './routes/admin.js';
+import { authRouter } from './routes/auth.js';
+import { requireLogin } from './services/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
+
+app.get(['/login', '/login.html'], (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
+});
+
+app.use('/api/auth', authRouter);
+
+app.use(requireLogin);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.get('/health', (_req, res) => res.json({ ok: true, service: 'hunter-ads-report-system' }));
