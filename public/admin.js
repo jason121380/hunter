@@ -78,7 +78,7 @@ function accountPicker(selectedIds, disabled) {
   }
   const selected = new Set(selectedIds || []);
   return `
-    <div class="row" style="margin-top:8px">
+    <div class="row picker-tools">
       <button type="button" class="outline" id="selectAll" ${disabled ? 'disabled' : ''}>全選</button>
       <button type="button" class="outline" id="selectNone" ${disabled ? 'disabled' : ''}>全部取消</button>
     </div>
@@ -87,7 +87,7 @@ function accountPicker(selectedIds, disabled) {
         <label class="acct">
           <input type="checkbox" class="acctBox" value="${esc(c.id)}"
             ${selected.has(c.id) ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
-          <span style="color:#171717;font-weight:700">${esc(c.name)}
+          <span class="acct-name">${esc(c.name)}
             <span>${esc(c.accountId)}${c.metaName && c.metaName !== c.name ? ' ｜ ' + esc(c.metaName) : ''}</span>
           </span>
         </label>
@@ -206,12 +206,14 @@ function openEdit(user) {
       <button class="outline" type="button" id="cancel">取消</button>
     </div>
 
-    <label class="field" style="margin-top:26px">重設密碼（至少 6 字元）
-      <input type="password" id="f_password" autocomplete="new-password" placeholder="留空則不變更">
-    </label>
-    <div class="actions">
-      <button class="outline" type="button" id="resetPw">更新密碼</button>
-      <button class="danger" type="button" id="remove">刪除此帳號</button>
+    <div class="panel-section">
+      <label class="field">重設密碼（至少 6 字元）
+        <input type="password" id="f_password" autocomplete="new-password" placeholder="留空則不變更">
+      </label>
+      <div class="actions">
+        <button class="outline" type="button" id="resetPw">更新密碼</button>
+        <button class="danger" type="button" id="remove">刪除此帳號</button>
+      </div>
     </div>`;
   wirePicker();
 

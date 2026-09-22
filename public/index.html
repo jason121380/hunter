@@ -2,36 +2,82 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ff6500">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="廣告回報">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <title>廣告數據回報</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <div class="app">
-    <header><button id="back" hidden>‹</button><strong id="title">廣告數據回報</strong><button id="refresh">↻</button></header>
+    <header>
+      <div class="hdr-side">
+        <button id="back" class="icon-btn" type="button" aria-label="返回" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+      </div>
+      <strong id="title">廣告數據回報</strong>
+      <div class="hdr-side hdr-side--end">
+        <button id="refresh" class="icon-btn" type="button" aria-label="重新整理">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+        </button>
+        <button id="logout" class="icon-btn" type="button" aria-label="登出">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
+    </header>
     <main>
       <section id="home" class="screen active">
-        <small>廣告成效管理</small><h1>目前進行中的客戶</h1>
+        <small>廣告成效管理</small>
+        <h1>目前進行中的客戶</h1>
         <p>選擇客戶後進行統一或個別回報。</p>
-        <button id="manual" class="outline">＋ 手動回報</button>
-        <button id="adminLink" class="outline" hidden>⚙ 後台管理</button>
+        <button id="manual" class="outline outline--brand" type="button">＋ 手動回報</button>
+        <button id="adminLink" class="outline" type="button" hidden>
+          <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+          後台管理
+        </button>
         <div id="clients" class="list"></div>
       </section>
+
       <section id="mode" class="screen">
-        <small>選擇回報方式</small><h1 id="clientName"></h1>
-        <button id="unified" class="card"><b>統一回報</b><span>一次整理所有進行中廣告</span></button>
-        <button id="individual" class="card"><b>個別回報</b><span>選擇特定廣告與廣告組合</span></button>
+        <small>選擇回報方式</small>
+        <h1 id="clientName"></h1>
+        <button id="unified" class="card" type="button"><b>統一回報</b><span>一次整理所有進行中廣告</span></button>
+        <button id="individual" class="card" type="button"><b>個別回報</b><span>選擇特定廣告與廣告組合</span></button>
       </section>
-      <section id="campaigns" class="screen"><small>個別回報</small><h1>選擇廣告</h1><div id="campaignList" class="list"></div></section>
-      <section id="adsets" class="screen"><small>廣告組合</small><h1 id="campaignName"></h1><div id="adsetList" class="list"></div><button id="adsetNext" class="primary">繼續</button></section>
+
+      <section id="campaigns" class="screen">
+        <small>個別回報</small>
+        <h1>選擇廣告</h1>
+        <div id="campaignList" class="list"></div>
+      </section>
+
+      <section id="adsets" class="screen">
+        <small>廣告組合</small>
+        <h1 id="campaignName"></h1>
+        <div id="adsetList" class="list"></div>
+        <button id="adsetNext" class="primary" type="button">繼續</button>
+      </section>
+
       <section id="period" class="screen">
-        <small id="periodMode"></small><h1>選擇統計區間</h1>
-        <div class="dates"><label>開始日期<input id="start" type="date"></label><label>結束日期<input id="end" type="date"></label></div>
-        <button id="run" class="primary">讀取成效</button><div id="result"></div>
+        <small id="periodMode"></small>
+        <h1>選擇統計區間</h1>
+        <div class="dates">
+          <label>開始日期<input id="start" type="date"></label>
+          <label>結束日期<input id="end" type="date"></label>
+        </div>
+        <button id="run" class="primary" type="button">讀取成效</button>
+        <div id="result" class="result"></div>
       </section>
     </main>
     <div id="loading" class="loading" hidden><span class="spinner" aria-hidden="true"></span><span>讀取資料中…</span></div>
-    <div id="toast" class="toast" hidden></div>
+    <div id="toast" class="toast" role="status" hidden></div>
   </div>
   <script src="/app.js"></script>
 </body>

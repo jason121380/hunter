@@ -2,26 +2,37 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Meta Token 更新</title>
-  <style>
-    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#171717;background:#f6f7f9}
-    *{box-sizing:border-box}body{margin:0}.wrap{width:min(100% - 32px,580px);margin:40px auto;background:#fff;border-radius:20px;padding:24px;box-shadow:0 8px 30px #0000000d}
-    h1{font-size:24px;margin:0 0 8px}p{color:#666;line-height:1.6}.field{margin-top:18px}.field label{display:block;font-weight:700;margin-bottom:7px}
-    input,textarea{width:100%;border:1px solid #ddd;border-radius:12px;padding:12px;font:inherit}textarea{min-height:130px;resize:vertical}
-    button{width:100%;border:0;border-radius:14px;background:#ff6500;color:#fff;font-weight:800;padding:14px;margin-top:18px;cursor:pointer}
-    .result{margin-top:20px;padding:14px;border-radius:14px;background:#f7f7f7;display:none}.result.show{display:block}.token{word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
-    .ok{color:#087a3d}.err{color:#a52a00}
-  </style>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ff6500">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <title>Meta Token 更新｜廣告數據回報</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="wrap">
-    <h1>Meta Long-Lived Token</h1>
-    <p>貼上剛從 Graph API Explorer 產生的短效 User Access Token，系統會用 Railway 內的 App ID / App Secret 交換成 Long-Lived Token。此頁僅限管理員（ADMIN）帳號使用。</p>
-    <div class="field"><label for="short">短效 User Access Token</label><input id="short" type="password" autocomplete="off" spellcheck="false"><small style="display:block;margin-top:6px;color:#777">Token 會以密碼形式隱藏，避免截圖外洩。</small></div>
-    <button id="go" type="button">交換成 Long-Lived Token</button>
-    <section id="result" class="result"></section>
-  </main>
+  <div class="app">
+    <header>
+      <div class="hdr-side">
+        <a class="link" href="/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>回報系統
+        </a>
+      </div>
+      <strong>Meta Token</strong>
+      <div class="hdr-side hdr-side--end"></div>
+    </header>
+    <main class="page">
+      <small class="eyebrow">管理員功能</small>
+      <h1>更新 Long-Lived Token</h1>
+      <p class="lead">貼上剛從 Graph API Explorer 產生的短效 User Access Token，系統會用 Railway 內的 App ID / App Secret 交換成長效 Token。此頁僅限管理員使用。</p>
+
+      <label class="field" for="short">短效 User Access Token
+        <input id="short" type="password" autocomplete="off" autocapitalize="none" spellcheck="false">
+      </label>
+      <div class="hint">Token 會以密碼形式隱藏，避免截圖外洩。</div>
+
+      <button id="go" class="primary" type="button">交換成 Long-Lived Token</button>
+      <section id="result" class="result-box" aria-live="polite"></section>
+    </main>
+  </div>
   <script src="/token.js"></script>
 </body>
 </html>

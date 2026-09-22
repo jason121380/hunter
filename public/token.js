@@ -7,7 +7,7 @@ function esc(value) {
 }
 
 document.getElementById('go').onclick = async () => {
-  result.className = 'result show';
+  result.className = 'result-box show';
   result.textContent = '處理中…';
   try {
     const res = await fetch('/api/admin/exchange-meta-token', {
@@ -23,7 +23,7 @@ document.getElementById('go').onclick = async () => {
       '<div class="ok"><b>交換成功</b></div>' +
       '<p>有效期：約 ' + esc(data.expiresInDays ?? '?') + ' 天</p>' +
       '<div class="token" id="longToken"></div>' +
-      '<button id="copy" type="button">複製 Long-Lived Token</button>';
+      '<button id="copy" class="primary" type="button">複製 Long-Lived Token</button>';
 
     document.getElementById('longToken').textContent = data.accessToken;
     document.getElementById('copy').onclick = async () => {

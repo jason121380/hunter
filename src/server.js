@@ -35,8 +35,24 @@ app.get(['/login', '/login.html'], (_req, res) => {
   res.sendFile(path.join(publicDir, 'login.html'));
 });
 
-app.get('/login.js', (_req, res) => {
-  res.type('application/javascript').sendFile(path.join(publicDir, 'login.js'));
+// 登入前就必須拿得到的靜態資源：登入頁腳本、共用樣式、PWA 設定與圖示。
+// 清單固定寫死，req.path 不會被用來拼出清單以外的路徑。
+const PUBLIC_ASSETS = [
+  '/login.js',
+  '/styles.css',
+  '/manifest.webmanifest',
+  '/sw.js',
+  '/offline.html',
+  '/icons/icon.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/icon-maskable-512.png',
+  '/icons/apple-touch-icon.png',
+];
+app.get(PUBLIC_ASSETS, (req, res, next) => {
+  // Service Worker 必須每次重新驗證，程式更新才會即時生效
+  if (req.path === '/sw.js') res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(publicDir, req.path), err => (err ? next(err) : undefined));
 });
 
 app.use('/api/auth', authRouter);

@@ -2,40 +2,37 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ff6500">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="廣告回報">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <title>登入｜廣告數據回報</title>
-  <style>
-    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#171717;background:#f6f7f9}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
-    .card{width:min(100%,460px);background:#fff;border-radius:24px;padding:30px 24px;box-shadow:0 18px 60px #0000000b}
-    .brand{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:16px;background:#ff6500;color:white;font-weight:900;font-size:20px;margin-bottom:20px}
-    h1{font-size:28px;margin:0 0 8px}.sub{color:#737373;line-height:1.6;margin:0 0 26px}
-    label{display:block;font-size:13px;font-weight:800;margin:16px 0 7px}
-    input{width:100%;height:52px;border:1px solid #ddd;border-radius:14px;padding:0 15px;font:inherit;outline:none}
-    input:focus{border-color:#ff6500;box-shadow:0 0 0 3px #ff650016}
-    button{width:100%;height:52px;margin-top:22px;border:0;border-radius:14px;background:#ff6500;color:#fff;font:inherit;font-weight:900;cursor:pointer}
-    button:disabled{opacity:.55;cursor:default}
-    .error{display:none;margin-top:16px;padding:12px 14px;border-radius:12px;background:#fff3ed;color:#a53f00;font-size:14px;line-height:1.5}
-    .hint{font-size:12px;color:#999;margin-top:16px;text-align:center}
-  </style>
+  <link rel="stylesheet" href="/styles.css">
 </head>
-<body>
-  <main class="card">
-    <div class="brand">AD</div>
+<body class="auth">
+  <main class="auth-card">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 512 512" width="28" height="28"><g fill="#fff"><rect x="120" y="292" width="64" height="112" rx="16"/><rect x="224" y="220" width="64" height="184" rx="16"/><rect x="328" y="132" width="64" height="272" rx="16"/></g><path d="M132 224 L236 152 L316 196 L392 108" fill="none" stroke="#fff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" opacity=".92"/></svg>
+    </div>
     <h1>廣告數據回報</h1>
-    <p class="sub">請登入後進入內部廣告回報系統。</p>
+    <p class="lead">請登入後進入內部廣告回報系統。</p>
 
-    <form id="form">
-      <label for="username">帳號</label>
-      <input id="username" name="username" autocomplete="username" required>
-
-      <label for="password">密碼</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" required>
-
-      <button id="submit" type="submit">登入</button>
-      <div id="error" class="error"></div>
+    <form id="form" novalidate>
+      <label class="field" for="username">帳號
+        <input id="username" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
+      </label>
+      <label class="field" for="password">密碼
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button id="submit" class="primary" type="submit">登入</button>
+      <div id="error" class="form-error" role="alert"></div>
     </form>
-    <div class="hint">內部系統</div>
+    <div class="auth-foot">內部系統</div>
   </main>
   <script src="/login.js"></script>
 </body>
