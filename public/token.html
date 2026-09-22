@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Meta Token 更新</title>
+  <style>
+    :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;color:#171717;background:#f6f7f9}
+    *{box-sizing:border-box}body{margin:0}.wrap{width:min(100% - 32px,580px);margin:40px auto;background:#fff;border-radius:20px;padding:24px;box-shadow:0 8px 30px #0000000d}
+    h1{font-size:24px;margin:0 0 8px}p{color:#666;line-height:1.6}.field{margin-top:18px}.field label{display:block;font-weight:700;margin-bottom:7px}
+    input,textarea{width:100%;border:1px solid #ddd;border-radius:12px;padding:12px;font:inherit}textarea{min-height:130px;resize:vertical}
+    button{width:100%;border:0;border-radius:14px;background:#ff6500;color:#fff;font-weight:800;padding:14px;margin-top:18px;cursor:pointer}
+    .result{margin-top:20px;padding:14px;border-radius:14px;background:#f7f7f7;display:none}.result.show{display:block}.token{word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+    .ok{color:#087a3d}.err{color:#a52a00}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Meta Long-Lived Token</h1>
+    <p>不需要 Google Apps Script。貼上剛從 Graph API Explorer 產生的短效 User Access Token，系統會用 Railway 內的 App ID / App Secret 交換成 Long-Lived Token。</p>
+    <div class="field"><label>Admin Key</label><input id="key" type="password" autocomplete="off"></div>
+    <div class="field"><label>短效 User Access Token</label><textarea id="short" autocomplete="off"></textarea></div>
+    <button id="go">交換成 Long-Lived Token</button>
+    <section id="result" class="result"></section>
+  </main>
+  <script>
+    const result=document.getElementById('result');
+    document.getElementById('go').onclick=async()=>{
+      result.className='result show'; result.innerHTML='處理中…';
+      try{
+        const res=await fetch('/api/admin/exchange-meta-token',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-admin-key':document.getElementById('key').value},
+          body:JSON.stringify({shortToken:document.getElementById('short').value.trim()})
+        });
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.message||'交換失敗');
+        result.innerHTML='<div class="ok"><b>交換成功</b></div><p>有效期：約 '+(data.expiresInDays ?? '?')+' 天</p><div class="token" id="longToken"></div><button id="copy">複製 Long-Lived Token</button>';
+        document.getElementById('longToken').textContent=data.accessToken;
+        document.getElementById('copy').onclick=async()=>{await navigator.clipboard.writeText(data.accessToken);document.getElementById('copy').textContent='已複製'};
+      }catch(e){result.innerHTML='<div class="err"><b>'+String(e.message).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))+'</b></div>'}
+    };
+  </script>
+</body>
+</html>
