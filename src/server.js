@@ -19,6 +19,8 @@ const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
 
+app.get('/health', (_req, res) => res.json({ ok: true, service: 'hunter-ads-report-system' }));
+
 app.get(['/login', '/login.html'], (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
 });
@@ -27,8 +29,6 @@ app.use('/api/auth', authRouter);
 
 app.use(requireLogin);
 app.use(express.static(path.join(__dirname, '..', 'public')));
-
-app.get('/health', (_req, res) => res.json({ ok: true, service: 'hunter-ads-report-system' }));
 
 app.get('/api/system/meta-token', async (_req, res, next) => {
   try { res.json(await getTokenStatus()); } catch (error) { next(error); }
