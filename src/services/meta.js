@@ -99,3 +99,35 @@ export async function getTokenStatus() {
       : null,
   };
 }
+
+
+export async function exchangeUserToken(shortToken) {
+  const { appId, appSecret, apiVersion } = config.meta;
+  if (!shortToken) throw new Error('請提供短效 User Access Token。');
+  if (!appId || !appSecret) throw new Error('META_APP_ID / META_APP_SECRET 尚未設定。');
+
+  const url = new URL(`https://graph.facebook.com/${apiVersion}/oauth/access_token`);
+  url.searchParams.set('grant_type', 'fb_exchange_token');
+  url.searchParams.set('client_id', appId);
+  url.searchParams.set('client_secret', appSecret);
+  url.searchParams.set('fb_exchange_token', shortToken);
+
+  const response = await fetch(url);
+  const body = await response.text();
+  let payload = {};
+  try { payload = JSON.parse(body); } catch {}
+
+  if (!response.ok || !payload.access_token) {
+    const detail = payload.error?.message || body || `HTTP ${response.status}`;
+    throw new Error(`Meta Token 交換失敗：${detail}`);
+  }
+
+  return {
+    accessToken: payload.access_token,
+    tokenType: payload.token_type || 'bearer',
+    expiresIn: Number(payload.expires_in || 0),
+    expiresInDays: payload.expires_in
+      ? Math.round((Number(payload.expires_in) / 86400) * 10) / 10
+      : null,
+  };
+}
