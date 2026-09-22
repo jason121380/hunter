@@ -1,13 +1,21 @@
 import { config } from '../config.js';
 
 function assertMetaConfig() {
-  if (!config.meta.accessToken) throw new Error('META_ACCESS_TOKEN 尚未設定。');
+  if (!config.meta.accessToken) {
+    throw new Error('META_ACCESS_TOKEN 尚未設定。');
+  }
+}
+
+function normalizeGraphPath(value) {
+  let clean = String(value || '');
+  while (clean.startsWith('/')) clean = clean.slice(1);
+  return clean;
 }
 
 export async function metaGet(path, params = {}) {
   assertMetaConfig();
 
-  const cleanPath = String(path || '').replace(/^\/+/, '');
+  const cleanPath = normalizeGraphPath(path);
   const url = new URL(
     `https://graph.facebook.com/${config.meta.apiVersion}/${cleanPath}`
   );
@@ -42,10 +50,14 @@ export async function metaGetAll(path, params = {}) {
   let pages = 1;
 
   while (next) {
-    if (pages >= 50) throw new Error('Meta API 分頁超過安全上限 50 頁。');
+    if (pages >= 50) {
+      throw new Error('Meta API 分頁超過安全上限 50 頁。');
+    }
 
     const response = await fetch(next);
-    if (!response.ok) throw new Error(`Meta API 分頁錯誤 ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Meta API 分頁錯誤 ${response.status}`);
+    }
 
     const data = await response.json();
     if (Array.isArray(data.data)) rows.push(...data.data);
@@ -67,7 +79,6 @@ export async function getTokenStatus() {
   const url = new URL(
     `https://graph.facebook.com/${apiVersion}/debug_token`
   );
-
   url.searchParams.set('input_token', accessToken);
   url.searchParams.set('access_token', `${appId}|${appSecret}`);
 
