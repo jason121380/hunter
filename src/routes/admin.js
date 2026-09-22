@@ -1,8 +1,28 @@
 import { Router } from 'express';
 import { importMetaAccounts } from '../services/admin.js';
 import { bootstrapMetaAccounts } from '../services/bootstrap.js';
+import { metaGetAll } from '../services/meta.js';
+import { requireAdmin } from '../middleware/admin.js';
 
 export const adminRouter = Router();
+
+adminRouter.use('/admin', requireAdmin);
+
+adminRouter.get('/admin/meta-accounts', async (_req, res, next) => {
+  try {
+    const accounts = await metaGetAll('me/adaccounts', {
+      fields: 'id,name,account_status',
+      limit: 500,
+    });
+    res.json({
+      accounts: accounts.map(a => ({
+        accountId: String(a.id || ''),
+        metaName: a.name || '',
+        accountStatus: a.account_status ?? null,
+      })),
+    });
+  } catch (error) { next(error); }
+});
 
 adminRouter.post('/admin/import-meta-accounts', async (req, res, next) => {
   try {
