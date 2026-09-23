@@ -164,6 +164,11 @@ h2 {
   margin: 0 0 var(--s5);
   color: var(--text-2);
 }
+/* 統計區間頁的客戶／廣告名稱：緊貼標題，讓使用者知道現在在回報哪一個 */
+.screen > .period-context {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
 .meta {
   color: var(--text-3);
   font-size: var(--fs-sm);
@@ -600,10 +605,12 @@ html.is-standalone, html.is-standalone body { touch-action: pan-x pan-y; }
 .preview-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--s3);
 }
-.preview-title { color: var(--brand-strong); font-size: var(--fs-lg); font-weight: 800; line-height: var(--lh-tight); }
+.preview-heading { min-width: 0; display: grid; gap: 2px; }
+.preview-eyebrow { color: var(--brand-strong); font-size: var(--fs-sm); font-weight: 800; }
+.preview-title { color: var(--text); font-size: var(--fs-lg); font-weight: 800; line-height: var(--lh-tight); overflow-wrap: anywhere; }
 .preview-sub { margin: var(--s2) 0 0; color: var(--text-2); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
 .pill-btn {
   flex-shrink: 0;

@@ -147,6 +147,7 @@ $('unified').onclick = () => {
   state.mode = 'unified';
   preparePeriod();
   $('periodMode').textContent = '統一回報';
+  $('periodContext').textContent = state.client.name;
   $('run').textContent = '讀取成效';
   screen('period');
 };
@@ -193,6 +194,7 @@ $('adsetNext').onclick = () => {
   state.mode = 'individual';
   preparePeriod();
   $('periodMode').textContent = '個別回報';
+  $('periodContext').textContent = `${state.client.name} › ${state.campaign.name}`;
   $('run').textContent = '讀取成效預覽';
   screen('period');
 };
@@ -552,7 +554,10 @@ function renderPreview(d, ctx) {
   box.innerHTML = `
     <section class="preview">
       <div class="preview-head">
-        <strong class="preview-title">成效預覽</strong>
+        <div class="preview-heading">
+          <span class="preview-eyebrow">成效預覽</span>
+          <strong class="preview-title">${esc(d.campaign.name)}</strong>
+        </div>
         <button id="rerun" class="pill-btn" type="button">${RELOAD_ICON}重新讀取</button>
       </div>
       <p class="preview-sub">${esc(dateLine)}｜已選 ${state.selected.size} 個廣告組合</p>

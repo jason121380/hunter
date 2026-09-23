@@ -191,7 +191,10 @@
 ```html
 <section class="preview">
   <div class="preview-head">
-    <strong class="preview-title">成效預覽</strong>
+    <div class="preview-heading">
+      <span class="preview-eyebrow">成效預覽</span>
+      <strong class="preview-title">廣告名稱</strong>
+    </div>
     <button class="pill-btn"><svg>…</svg>重新讀取</button>
   </div>
   <p class="preview-sub">日期：截至 09/23｜已選 1 個廣告組合</p>
@@ -204,6 +207,8 @@
 <div class="report-output">…文字卡片或圖片卡片…</div>
 ```
 
+- `.preview-title` 放**廣告名稱**（不是「成效預覽」四個字），「成效預覽」降為上方的 `.preview-eyebrow`；名稱過長時換行，不截斷。
+- 統計區間頁在 `h1` 下方有 `.period-context`：統一回報顯示客戶名稱，個別回報顯示「客戶 › 廣告名稱」，讓使用者隨時知道在回報哪一個。
 - `.pill-btn`：44px 高的膠囊次要按鈕（品牌色字）。
 - `.metric-grid` 兩欄；`.metric` 內 `span` 為標籤、`b` 為數值。
 - 圖片卡片沿用 `.report`，內含 `.report-image`（可長按儲存）與 `.copy-btn`「下載圖片」（已回報後變綠，文字不變）。
