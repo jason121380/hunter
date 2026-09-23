@@ -184,6 +184,31 @@
 - 無法回報的狀態（無資料、需個別回報）不顯示文字與按鈕，改顯示 `.report-msg` 說明；`.status-*` 對應後端的 `status` 值：`no_data`、`requires_individual`、`no_active_adsets`、`error`。
 - 回報卡片內的 `.copy-btn` 是「每張卡片一個主要動作」，不受「每個畫面只有一個 `.primary`」限制。
 
+### 個別回報：成效預覽 → 純文字／圖片
+
+與舊版相同，個別回報先顯示預覽，確認數字後再選回報方式。
+
+```html
+<section class="preview">
+  <div class="preview-head">
+    <strong class="preview-title">成效預覽</strong>
+    <button class="pill-btn"><svg>…</svg>重新讀取</button>
+  </div>
+  <p class="preview-sub">日期：截至 09/23｜已選 1 個廣告組合</p>
+  <div class="metric-grid"><div class="metric"><span>標籤</span><b>數值</b></div>…</div>
+  <div class="preview-actions">
+    <button class="outline">純文字回報</button>
+    <button class="primary">圖片回報</button>
+  </div>
+</section>
+<div class="report-output">…文字卡片或圖片卡片…</div>
+```
+
+- `.pill-btn`：44px 高的膠囊次要按鈕（品牌色字）。
+- `.metric-grid` 兩欄；`.metric` 內 `span` 為標籤、`b` 為數值。
+- 圖片卡片沿用 `.report`，內含 `.report-image`（可長按儲存）與 `.copy-btn`「分享／儲存圖片」。
+- 回報圖片由 canvas 繪製（1080px 寬 JPG），配色與版面寫在 `app.js` 的 `IMG` 常數；改品牌色時要一起改。
+
 ### 回饋
 
 - `.loading`：全螢幕遮罩 + `.spinner`（尊重 `prefers-reduced-motion`，只放慢不停止）。用在「使用者按了按鈕、必須等結果」的情境。

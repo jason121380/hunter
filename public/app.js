@@ -139,6 +139,7 @@ $('unified').onclick = () => {
   state.mode = 'unified';
   preparePeriod();
   $('periodMode').textContent = '統一回報';
+  $('run').textContent = '讀取成效';
   screen('period');
 };
 
@@ -184,6 +185,7 @@ $('adsetNext').onclick = () => {
   state.mode = 'individual';
   preparePeriod();
   $('periodMode').textContent = '個別回報';
+  $('run').textContent = '讀取成效預覽';
   screen('period');
 };
 
@@ -335,7 +337,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !$('sheet').hidden) closePicker();
 });
 
-$('run').onclick = async () => {
+$('run').onclick = () => runReport();
+
+async function runReport() {
   if (!state.range) return toast('請選擇日期');
   const { start: startDate, end: endDate } = state.range;
   loading(true);
@@ -351,50 +355,56 @@ $('run').onclick = async () => {
       api(`/api/reports/status?${statusQuery}`).catch(() => ({ items: [] })),
     ]);
     const reportedIds = new Set((reported.items || []).map(x => String(x.campaignId)));
-    renderResult(d, { startDate, endDate, reportedIds });
+    const ctx = { startDate, endDate, reportedIds };
+    if (state.mode === 'unified') renderUnified(d, ctx);
+    else renderPreview(d, ctx);
   } catch (e) { toast(e.message); } finally { loading(false); }
-};
+}
 
 // ── 成效卡片 ─────────────────────────────────────────────
-// 與舊版 Apps Script 相同：每個廣告一張卡片，內含可直接貼給客戶的回報文字，
-// 按「複製回報」複製到剪貼簿並寫入 report_logs 標記為已回報。
+// 與舊版 Apps Script 相同：
+//   統一回報 → 每個廣告一張回報卡片（文字 + 複製）
+//   個別回報 → 先顯示「成效預覽」，再選「純文字回報」或「圖片回報」
 
 const TYPE_BADGE = { message: '私訊型廣告', traffic: '流量型廣告' };
 let resultCards = [];
 
-function renderResult(d, { startDate, endDate, reportedIds }) {
-  const box = $('result');
-  box.className = 'result result-list';
-
-  const items = state.mode === 'unified'
-    ? (d.items || [])
-    : [{ status: d.reports?.[0]?.hasData === false ? 'no_data' : 'ok', campaign: d.campaign, report: d.reports?.[0],
-        message: '此日期區間沒有可用的成效資料。' }];
-
-  resultCards = items.map(x => ({
+function makeCard(x, { startDate, endDate, reportedIds }) {
+  return {
     ...x,
     text: x.status === 'ok' && x.report ? reportText(x.campaign.name, x.report, startDate, endDate) : '',
     reported: reportedIds.has(String(x.campaign.id)),
     period: { startDate, endDate },
-  }));
+  };
+}
 
+function renderUnified(d, ctx) {
+  const box = $('result');
+  box.className = 'result result-list';
+  resultCards = (d.items || []).map(x => makeCard(x, ctx));
   box.innerHTML = resultCards.map((c, i) => reportCard(c, i)).join('')
     || '<p class="meta">此帳號目前沒有進行中的廣告。</p>';
+  wireCopyButtons(box);
+}
 
-  box.querySelectorAll('[data-copy]').forEach(btn => {
+function wireCopyButtons(root) {
+  root.querySelectorAll('[data-copy]').forEach(btn => {
     btn.onclick = () => copyReport(Number(btn.dataset.copy), btn);
   });
+}
+
+function statusPill(c) {
+  if (c.status === 'ok' && c.text) {
+    return c.reported
+      ? '<span class="status status-done">✓ 已回報</span>'
+      : '<span class="status status-pending">尚未回報</span>';
+  }
+  return `<span class="status status-${esc(c.status)}">${esc(STATUS_LABEL[c.status] || c.status)}</span>`;
 }
 
 function reportCard(c, i) {
   const ok = c.status === 'ok' && c.text;
   const type = c.report?.type || c.campaign.type;
-  const statusPill = ok
-    ? (c.reported
-      ? '<span class="status status-done">✓ 已回報</span>'
-      : '<span class="status status-pending">尚未回報</span>')
-    : `<span class="status status-${esc(c.status)}">${esc(STATUS_LABEL[c.status] || c.status)}</span>`;
-
   return `
     <article class="report${ok && c.reported ? ' is-reported' : ''}" data-card="${i}">
       <div class="report-head">
@@ -402,7 +412,7 @@ function reportCard(c, i) {
           <strong>${esc(c.campaign.name)}</strong>
           ${TYPE_BADGE[type] ? `<span class="type-badge type-${esc(type)}">${TYPE_BADGE[type]}</span>` : ''}
         </div>
-        ${statusPill}
+        ${statusPill(c)}
       </div>
       ${ok
         ? `<pre class="report-text">${esc(c.text)}</pre>
@@ -411,34 +421,59 @@ function reportCard(c, i) {
     </article>`;
 }
 
-// 回報文字格式與舊版相同：
-//   廣告名稱 / M月份廣告成效回報 / 日期：截至 MM/DD / 各項指標
-function reportText(name, report, startDate, endDate) {
-  const d = report.data || {};
+// 標題與日期行，文字回報、預覽、圖片共用同一套規則
+function periodLabels(startDate, endDate) {
   const [sy, sm, sd] = startDate.split('-').map(Number);
   const [ey, em, ed] = endDate.split('-').map(Number);
   const sameMonth = sy === ey && sm === em;
   const mmdd = (m, dd) => `${pad(m)}/${pad(dd)}`;
+  return {
+    heading: sameMonth ? `${em}月份廣告成效回報` : '廣告成效回報',
+    dateLine: sameMonth && sd === 1 ? `日期：截至 ${mmdd(em, ed)}` : `日期：${mmdd(sm, sd)} – ${mmdd(em, ed)}`,
+  };
+}
 
-  const heading = sameMonth ? `${em}月份廣告成效回報` : '廣告成效回報';
-  const dateLine = sameMonth && sd === 1
-    ? `日期：截至 ${mmdd(em, ed)}`
-    : `日期：${mmdd(sm, sd)} – ${mmdd(em, ed)}`;
-
-  const lines = report.type === 'message'
-    ? [
-      `累積私訊數：${n(d.messages)}`,
-      `單次私訊成本：$ ${n(d.costPerMessage)}`,
-      `累積花費：$ ${n(d.actualSpend)}`,
-    ]
-    : [
-      `${d.resultLabel || '成果'}次數：${n(d.resultCount)}`,
-      `每次${d.resultLabel || '成果'}成本：$ ${n(d.costPerResult)}`,
-      `累積花費：$ ${n(d.actualSpend)}`,
-      `點擊率：${Number(d.ctr || 0).toFixed(2)}%`,
-    ];
-
+// 回報文字格式與舊版相同：
+//   廣告名稱 / M月份廣告成效回報 / 日期：截至 MM/DD / 各項指標
+function reportText(name, report, startDate, endDate) {
+  const { heading, dateLine } = periodLabels(startDate, endDate);
+  const lines = metricRows(report).map(([label, value]) => `${label}：${value.replace('NT$ ', '$ ')}`);
   return [name, heading, '', dateLine, '', ...lines].join('\n');
+}
+
+// 指標定義只有一份：預覽格子、文字回報、圖片回報都從這裡取
+function metricRows(report) {
+  const d = report?.data || {};
+  if (report?.type === 'message') {
+    return [
+      ['累積私訊數', n(d.messages)],
+      ['單次私訊成本', `NT$ ${n(d.costPerMessage)}`],
+      ['累積花費', `NT$ ${n(d.actualSpend)}`],
+    ];
+  }
+  const label = d.resultLabel || '成果';
+  return [
+    [`${label}次數`, n(d.resultCount)],
+    [`每次${label}成本`, `NT$ ${n(d.costPerResult)}`],
+    ['累積花費', `NT$ ${n(d.actualSpend)}`],
+    ['點擊率', `${Number(d.ctr || 0).toFixed(2)}%`],
+  ];
+}
+
+async function markReported(card, metadata) {
+  await api('/api/reports/mark-reported', {
+    method: 'POST',
+    body: JSON.stringify({
+      clientId: state.client.id,
+      campaignId: card.campaign.id,
+      campaignName: card.campaign.name,
+      reportType: state.mode === 'unified' ? 'unified' : 'individual',
+      startDate: card.period.startDate,
+      endDate: card.period.endDate,
+      metadata,
+    }),
+  });
+  card.reported = true;
 }
 
 async function copyReport(index, btn) {
@@ -459,23 +494,10 @@ async function copyReport(index, btn) {
   }
 
   try {
-    await api('/api/reports/mark-reported', {
-      method: 'POST',
-      body: JSON.stringify({
-        clientId: state.client.id,
-        campaignId: card.campaign.id,
-        campaignName: card.campaign.name,
-        reportType: state.mode === 'unified' ? 'unified' : 'individual',
-        startDate: card.period.startDate,
-        endDate: card.period.endDate,
-        metadata: { text: card.text },
-      }),
-    });
-    card.reported = true;
+    await markReported(card, { format: 'text', text: card.text });
     const el = document.querySelector(`[data-card="${index}"]`);
     el.outerHTML = reportCard(card, index);
-    document.querySelector(`[data-card="${index}"] [data-copy]`).onclick =
-      e => copyReport(index, e.currentTarget);
+    wireCopyButtons(document.querySelector(`[data-card="${index}"]`));
     toast('回報已複製，已標記為已回報。');
   } catch (e) {
     btn.disabled = false;
@@ -501,6 +523,263 @@ function copyText(text) {
     return navigator.clipboard.writeText(text).then(() => true, () => legacy());
   }
   return Promise.resolve(legacy());
+}
+
+// ── 個別回報：成效預覽 → 純文字／圖片 ─────────────────────────
+
+let preview = null;
+
+const RELOAD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>';
+
+function renderPreview(d, ctx) {
+  const report = d.reports?.[0];
+  const status = report && report.hasData !== false ? 'ok' : 'no_data';
+  const card = makeCard({ status, campaign: d.campaign, report, message: '此日期區間沒有可用的成效資料。' }, ctx);
+  resultCards = [card];
+  preview = { card, image: null };
+
+  const { dateLine } = periodLabels(ctx.startDate, ctx.endDate);
+  const box = $('result');
+  box.className = 'result';
+  box.innerHTML = `
+    <section class="preview">
+      <div class="preview-head">
+        <strong class="preview-title">成效預覽</strong>
+        <button id="rerun" class="pill-btn" type="button">${RELOAD_ICON}重新讀取</button>
+      </div>
+      <p class="preview-sub">${esc(dateLine)}｜已選 ${state.selected.size} 個廣告組合</p>
+      ${status === 'ok'
+        ? `<div class="metric-grid">${metricRows(report).map(([label, value]) =>
+            `<div class="metric"><span>${esc(label)}</span><b>${esc(value)}</b></div>`).join('')}</div>
+           <div class="preview-actions">
+             <button id="toText" class="outline" type="button">純文字回報</button>
+             <button id="toImage" class="primary" type="button">圖片回報</button>
+           </div>`
+        : `<p class="report-msg">${esc(card.message)}</p>`}
+    </section>
+    <div id="reportOutput" class="report-output"></div>`;
+
+  $('rerun').onclick = () => runReport();
+  if (status !== 'ok') return;
+  $('toText').onclick = showTextReport;
+  $('toImage').onclick = showImageReport;
+}
+
+function setOutputMode(mode) {
+  $('toText').classList.toggle('is-active', mode === 'text');
+  $('toImage').classList.toggle('is-active', mode === 'image');
+}
+
+function showTextReport() {
+  setOutputMode('text');
+  $('reportOutput').innerHTML = reportCard(preview.card, 0);
+  wireCopyButtons($('reportOutput'));
+  $('reportOutput').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function showImageReport() {
+  setOutputMode('image');
+  if (!preview.image) {
+    loading(true);
+    try {
+      preview.image = await buildReportImage(preview.card);
+    } catch (e) {
+      loading(false);
+      return toast(`圖片產生失敗：${e.message}`);
+    }
+    loading(false);
+  }
+  renderImageCard();
+  $('reportOutput').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderImageCard() {
+  const { card, image } = preview;
+  $('reportOutput').innerHTML = `
+    <article class="report${card.reported ? ' is-reported' : ''}">
+      <div class="report-head">
+        <div class="report-title">
+          <strong>${esc(card.campaign.name)}</strong>
+          <span class="type-badge type-image">圖片回報</span>
+        </div>
+        ${statusPill(card)}
+      </div>
+      <img class="report-image" src="${image.dataUrl}" alt="${esc(card.campaign.name)} 成效回報圖片">
+      <p class="hint report-hint">也可以長按圖片，直接儲存到相簿</p>
+      <button id="shareImage" class="copy-btn${card.reported ? ' is-done' : ''}" type="button">${card.reported ? '再次分享／儲存' : '分享／儲存圖片'}</button>
+    </article>`;
+  $('shareImage').onclick = shareImage;
+}
+
+async function shareImage() {
+  const { card, image } = preview;
+  const btn = $('shareImage');
+  if (btn.disabled) return;
+  btn.disabled = true;
+
+  // 圖片在按「圖片回報」時就已產生，這裡直接呼叫分享，確保仍在使用者點擊的手勢內（iOS 需要）
+  let how = 'download';
+  if (navigator.canShare?.({ files: [image.file] })) {
+    try {
+      await navigator.share({ files: [image.file], title: card.campaign.name });
+      how = 'share';
+    } catch (e) {
+      if (e.name === 'AbortError') { btn.disabled = false; return; }
+    }
+  }
+  if (how === 'download') downloadBlob(image.blob, image.file.name);
+
+  const done = how === 'share' ? '圖片已分享' : '圖片已下載';
+  if (card.reported) {
+    btn.disabled = false;
+    return toast(done);
+  }
+  try {
+    await markReported(card, { format: 'image' });
+    renderImageCard();
+    toast(`${done}，已標記為已回報。`);
+  } catch (e) {
+    btn.disabled = false;
+    toast(`${done}，但標記已回報失敗：${e.message}`);
+  }
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+// ── 回報圖片（JPG）─────────────────────────────────────────
+// 以 canvas 繪製，1080px 寬，適合 LINE／IG；高度依廣告名稱行數與指標數自動計算。
+
+const IMG = {
+  width: 1080, pad: 72, gap: 24, tileH: 188, radius: 28,
+  brand: '#ff6500', brandSoft: '#fff4ec', text: '#171717', text2: '#5b5b5b', text3: '#8b8b8b',
+  surface2: '#f8f9fa', line: '#e6e7ea',
+};
+
+async function buildReportImage(card) {
+  if (document.fonts?.ready) await document.fonts.ready;
+  const family = getComputedStyle(document.documentElement).fontFamily;
+  const font = (weight, size) => `${weight} ${size}px ${family}`;
+  const { heading, dateLine } = periodLabels(card.period.startDate, card.period.endDate);
+  const rows = metricRows(card.report);
+  const W = IMG.width;
+  const P = IMG.pad;
+  const inner = W - P * 2;
+
+  const measure = document.createElement('canvas').getContext('2d');
+  measure.font = font(800, 60);
+  const titleLines = wrapText(measure, card.campaign.name, inner);
+  const tileRows = Math.ceil(rows.length / 2);
+
+  const layout = {
+    eyebrow: P + 16 + 40,
+    title: P + 16 + 40 + 44,
+  };
+  layout.date = layout.title + titleLines.length * 76 + 20;
+  layout.tiles = layout.date + 100;
+  layout.footer = layout.tiles + tileRows * IMG.tileH + (tileRows - 1) * IMG.gap + 72;
+  const H = layout.footer + P;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = IMG.brand;
+  ctx.fillRect(0, 0, W, 16);
+  ctx.textBaseline = 'alphabetic';
+
+  ctx.fillStyle = IMG.brand;
+  ctx.font = font(800, 34);
+  ctx.fillText(heading, P, layout.eyebrow);
+
+  ctx.fillStyle = IMG.text;
+  ctx.font = font(800, 60);
+  titleLines.forEach((line, i) => ctx.fillText(line, P, layout.title + 60 + i * 76));
+
+  ctx.fillStyle = IMG.text2;
+  ctx.font = font(500, 34);
+  ctx.fillText(dateLine, P, layout.date + 34);
+
+  const tileW = (inner - IMG.gap) / 2;
+  rows.forEach(([label, value], i) => {
+    const x = P + (i % 2) * (tileW + IMG.gap);
+    const y = layout.tiles + Math.floor(i / 2) * (IMG.tileH + IMG.gap);
+    roundRect(ctx, x, y, tileW, IMG.tileH, IMG.radius);
+    ctx.fillStyle = IMG.surface2;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = IMG.line;
+    ctx.stroke();
+
+    ctx.fillStyle = IMG.text3;
+    ctx.font = font(700, 30);
+    ctx.fillText(label, x + 36, y + 64);
+
+    ctx.fillStyle = IMG.text;
+    ctx.font = font(800, fitFont(ctx, value, tileW - 72, 64, family));
+    ctx.fillText(value, x + 36, y + 146);
+  });
+
+  ctx.fillStyle = IMG.text3;
+  ctx.font = font(500, 26);
+  const now = new Date();
+  ctx.fillText(`資料來源：Meta 廣告　產出時間 ${toYmd(now).replaceAll('-', '/')} ${pad(now.getHours())}:${pad(now.getMinutes())}`, P, layout.footer);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  const blob = await new Promise((resolve, reject) =>
+    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('無法輸出 JPG'))), 'image/jpeg', 0.92));
+  // 檔名只用 ASCII：部分瀏覽器遇到中文檔名會退回成「download」
+  const filename = `ad-report_${card.period.startDate}_${card.period.endDate}_${card.campaign.id}.jpg`;
+  const file = new File([blob], filename, { type: 'image/jpeg' });
+  return { dataUrl, blob, file, width: W, height: H };
+}
+
+// 中英混排逐字斷行（中文沒有空白可斷）
+function wrapText(ctx, text, maxWidth) {
+  const lines = [];
+  let line = '';
+  for (const ch of text) {
+    if (ctx.measureText(line + ch).width > maxWidth && line) {
+      lines.push(line);
+      line = ch.trimStart();
+    } else {
+      line += ch;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// 數值太長（例如 NT$ 1,234,567）時縮小字級，避免超出格子
+function fitFont(ctx, text, maxWidth, size, family) {
+  let s = size;
+  ctx.font = `800 ${s}px ${family}`;
+  while (s > 36 && ctx.measureText(text).width > maxWidth) {
+    s -= 2;
+    ctx.font = `800 ${s}px ${family}`;
+  }
+  return s;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 function n(v) { return Math.round(Number(v) || 0).toLocaleString('zh-TW'); }
