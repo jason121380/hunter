@@ -40,6 +40,7 @@ function screen(id, push = true) {
   if (push && state.history.at(-1) !== id) state.history.push(id);
   $('back').hidden = id === 'home';
   $('refresh').hidden = id !== 'home';
+  document.body.dataset.edgeBack = id === 'home' ? 'off' : 'on';
   scrollTo(0, 0);
 }
 function back() {
@@ -49,6 +50,13 @@ function back() {
 }
 
 $('back').onclick = back;
+// PWA 左緣右滑（見 gestures.js）：月曆開著時先關月曆，讀取中不動作
+document.addEventListener('edge-back', () => {
+  if (!$('sheet').hidden) return closePicker();
+  if (!$('loading').hidden) return;
+  back();
+});
+document.body.dataset.edgeBack = 'off';
 $('refresh').onclick = () => loadClients({ refresh: true });
 $('logout').onclick = async () => {
   await api('/api/auth/logout', { method: 'POST' }).catch(() => {});

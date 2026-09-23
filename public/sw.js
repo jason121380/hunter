@@ -16,6 +16,7 @@ const PRECACHE = [
 const RUNTIME = new Set([
   ...PRECACHE,
   '/app.js',
+  '/gestures.js',
   '/admin.js',
   '/token.js',
   '/icons/icon-maskable-512.png',

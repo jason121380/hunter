@@ -39,6 +39,7 @@ app.get(['/login', '/login.html'], (_req, res) => {
 // 清單固定寫死，req.path 不會被用來拼出清單以外的路徑。
 const PUBLIC_ASSETS = [
   '/login.js',
+  '/gestures.js',
   '/styles.css',
   '/manifest.webmanifest',
   '/sw.js',

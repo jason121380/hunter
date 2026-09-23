@@ -1,3 +1,6 @@
+// PWA 左緣右滑（見 gestures.js）
+document.addEventListener('edge-back', () => { location.href = '/'; });
+
 const result = document.getElementById('result');
 
 function esc(value) {

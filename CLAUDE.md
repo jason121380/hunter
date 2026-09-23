@@ -48,6 +48,7 @@ public/
   login.html/.js     登入
   admin.html/.js     後台（僅 ADMIN）
   token.html/.js     Meta Token 交換（僅 ADMIN）
+  gestures.js        PWA 模式專用：禁止縮放、左緣右滑返回（送出 edge-back 事件）
   sw.js / manifest.webmanifest / icons/   PWA
 migrations/          schema 唯一來源
 ```

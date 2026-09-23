@@ -5,6 +5,20 @@
 
 ---
 
+## 2026-09-23 · PWA：禁止縮放、左緣右滑返回
+
+**背景**：加入主畫面後以獨立視窗開啟時，可以雙指放大（不像 App）；而且 iOS 獨立視窗沒有瀏覽器的返回手勢，只能按左上角返回鍵。
+
+**決定**：
+- 新增 `public/gestures.js`，**只在 PWA 模式啟用**（`display-mode: standalone` 或 `navigator.standalone`）。一般瀏覽器分頁保留縮放（無障礙），也避免與瀏覽器本身的返回手勢衝突。
+- 禁止縮放：動態改 viewport 為 `user-scalable=no`、`html` 設 `touch-action: pan-x pan-y`、攔截 iOS `gesturestart/change/end` 與雙指 `touchmove`。
+- 左緣右滑：起點在最左 28px 內、水平滑動超過 80px 才觸發；上下捲動為主或太短都不觸發。觸發後送出 `edge-back` 事件，由各頁決定行為（先關月曆／編輯面板，再返回）。首頁與登入頁以 `data-edge-back="off"` 停用。
+- `gestures.js` 登入頁也要用，已加入 `server.js` 的 `PUBLIC_ASSETS`（內容不敏感）。
+
+**已知限制**：Android 的系統返回手勢會搶先處理邊緣滑動，Android PWA 的返回仍以系統行為為主；本功能主要針對 iPhone。
+
+---
+
 ## 2026-09-23 · 個別回報：成效預覽 → 純文字／圖片（JPG）回報
 
 **背景**：舊版的個別回報是兩段式：先看「成效預覽」（日期、已選廣告組合數、數字格子、重新讀取），再選「純文字回報」或「圖片回報」。使用者要求照做。

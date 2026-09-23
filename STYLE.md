@@ -230,6 +230,9 @@
 - 所有可點元素至少 44px 高；`touch-action: manipulation` 移除點擊延遲；關閉 tap highlight。
 - 輸入框 16px，避免 iOS 聚焦時自動放大；輸入框與 grid 欄位加 `min-width: 0`，避免內容撐破版面。
 - 不用原生日期欄位（見「統計區間選擇器」）。
+- **PWA 模式專用**（`gestures.js`，只在加入主畫面後以獨立視窗開啟時啟用，一般瀏覽器分頁不受影響）：
+  - 禁止雙指縮放與雙擊放大（viewport `user-scalable=no` + `touch-action: pan-x pan-y` + 攔截 iOS `gesture*` 事件）。
+  - 左緣右滑返回：從螢幕最左 28px 內往右滑超過 80px 觸發 `edge-back` 事件；拖曳時左側滑出 `.edge-back` 圓鈕，達門檻變品牌色。各頁自行處理 `edge-back`：主畫面先關月曆、再回上一個畫面；後台先關編輯面板、再回回報系統。頁面設 `body[data-edge-back="off"]` 可停用（首頁、登入頁）。
 - 頂欄半透明毛玻璃（`backdrop-filter`），捲動時內容從底下滑過。
 - PWA：`manifest.webmanifest`（standalone、直向、品牌色）+ `sw.js` + `icons/`。Service Worker 不快取登入相關內容，靜態檔網路優先。
 - 圖示來源是 `icons/icon.svg`；PNG 由它渲染產生（192、512、maskable 512、apple-touch 180）。改圖示時四個 PNG 要一起重產。

@@ -25,6 +25,11 @@ async function api(path, options = {}) {
 }
 
 $('home').onclick = () => { location.href = '/'; };
+// PWA 左緣右滑（見 gestures.js）
+document.addEventListener('edge-back', () => {
+  if (!$('panel').hidden) return closePanel();
+  location.href = '/';
+});
 $('logout').onclick = async () => {
   await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
   location.href = '/login';
