@@ -206,7 +206,7 @@
 
 - `.pill-btn`：44px 高的膠囊次要按鈕（品牌色字）。
 - `.metric-grid` 兩欄；`.metric` 內 `span` 為標籤、`b` 為數值。
-- 圖片卡片沿用 `.report`，內含 `.report-image`（可長按儲存）與 `.copy-btn`「分享／儲存圖片」。
+- 圖片卡片沿用 `.report`，內含 `.report-image`（可長按儲存）與 `.copy-btn`「下載圖片」（已回報後變綠，文字不變）。
 - 回報圖片由 canvas 繪製（1080px 寬 JPG），配色與版面寫在 `app.js` 的 `IMG` 常數；改品牌色時要一起改。
 
 ### 回饋

@@ -606,41 +606,30 @@ function renderImageCard() {
       </div>
       <img class="report-image" src="${image.dataUrl}" alt="${esc(card.campaign.name)} 成效回報圖片">
       <p class="hint report-hint">也可以長按圖片，直接儲存到相簿</p>
-      <button id="shareImage" class="copy-btn${card.reported ? ' is-done' : ''}" type="button">${card.reported ? '再次分享／儲存' : '分享／儲存圖片'}</button>
+      <button id="downloadImage" class="copy-btn${card.reported ? ' is-done' : ''}" type="button">下載圖片</button>
     </article>`;
-  $('shareImage').onclick = shareImage;
+  $('downloadImage').onclick = downloadImage;
 }
 
-async function shareImage() {
+async function downloadImage() {
   const { card, image } = preview;
-  const btn = $('shareImage');
+  const btn = $('downloadImage');
   if (btn.disabled) return;
   btn.disabled = true;
 
-  // 圖片在按「圖片回報」時就已產生，這裡直接呼叫分享，確保仍在使用者點擊的手勢內（iOS 需要）
-  let how = 'download';
-  if (navigator.canShare?.({ files: [image.file] })) {
-    try {
-      await navigator.share({ files: [image.file], title: card.campaign.name });
-      how = 'share';
-    } catch (e) {
-      if (e.name === 'AbortError') { btn.disabled = false; return; }
-    }
-  }
-  if (how === 'download') downloadBlob(image.blob, image.file.name);
+  downloadBlob(image.blob, image.file.name);
 
-  const done = how === 'share' ? '圖片已分享' : '圖片已下載';
   if (card.reported) {
     btn.disabled = false;
-    return toast(done);
+    return toast('圖片已下載');
   }
   try {
     await markReported(card, { format: 'image' });
     renderImageCard();
-    toast(`${done}，已標記為已回報。`);
+    toast('圖片已下載，已標記為已回報。');
   } catch (e) {
     btn.disabled = false;
-    toast(`${done}，但標記已回報失敗：${e.message}`);
+    toast(`圖片已下載，但標記已回報失敗：${e.message}`);
   }
 }
 
