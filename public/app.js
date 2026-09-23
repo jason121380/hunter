@@ -343,48 +343,164 @@ $('run').onclick = async () => {
     const payload = state.mode === 'unified'
       ? { accountId: state.client.accountId, startDate, endDate }
       : { accountId: state.client.accountId, campaignId: state.campaign.id, adSetIds: [...state.selected], startDate, endDate };
-    const d = await api(
-      state.mode === 'unified' ? '/api/reports/unified' : '/api/reports/individual',
-      { method: 'POST', body: JSON.stringify(payload) }
-    );
-    renderResult(d);
+    const statusQuery = new URLSearchParams({ clientId: state.client.id, startDate, endDate });
+    // 成效與「已回報」狀態同時抓，卡片一次畫對，不會先顯示未回報再跳成已回報
+    const [d, reported] = await Promise.all([
+      api(state.mode === 'unified' ? '/api/reports/unified' : '/api/reports/individual',
+        { method: 'POST', body: JSON.stringify(payload) }),
+      api(`/api/reports/status?${statusQuery}`).catch(() => ({ items: [] })),
+    ]);
+    const reportedIds = new Set((reported.items || []).map(x => String(x.campaignId)));
+    renderResult(d, { startDate, endDate, reportedIds });
   } catch (e) { toast(e.message); } finally { loading(false); }
 };
 
-function renderResult(d) {
+// ── 成效卡片 ─────────────────────────────────────────────
+// 與舊版 Apps Script 相同：每個廣告一張卡片，內含可直接貼給客戶的回報文字，
+// 按「複製回報」複製到剪貼簿並寫入 report_logs 標記為已回報。
+
+const TYPE_BADGE = { message: '私訊型廣告', traffic: '流量型廣告' };
+let resultCards = [];
+
+function renderResult(d, { startDate, endDate, reportedIds }) {
   const box = $('result');
-  if (state.mode === 'unified') {
-    box.className = 'result result-list';
-    box.innerHTML = (d.items || []).map(x => `
-      <div class="report">
-        <div class="report-head">
-          <strong>${esc(x.campaign.name)}</strong>
-          <span class="status status-${esc(x.status)}">${esc(STATUS_LABEL[x.status] || x.status)}</span>
+  box.className = 'result result-list';
+
+  const items = state.mode === 'unified'
+    ? (d.items || [])
+    : [{ status: d.reports?.[0]?.hasData === false ? 'no_data' : 'ok', campaign: d.campaign, report: d.reports?.[0],
+        message: '此日期區間沒有可用的成效資料。' }];
+
+  resultCards = items.map(x => ({
+    ...x,
+    text: x.status === 'ok' && x.report ? reportText(x.campaign.name, x.report, startDate, endDate) : '',
+    reported: reportedIds.has(String(x.campaign.id)),
+    period: { startDate, endDate },
+  }));
+
+  box.innerHTML = resultCards.map((c, i) => reportCard(c, i)).join('')
+    || '<p class="meta">此帳號目前沒有進行中的廣告。</p>';
+
+  box.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.onclick = () => copyReport(Number(btn.dataset.copy), btn);
+  });
+}
+
+function reportCard(c, i) {
+  const ok = c.status === 'ok' && c.text;
+  const type = c.report?.type || c.campaign.type;
+  const statusPill = ok
+    ? (c.reported
+      ? '<span class="status status-done">✓ 已回報</span>'
+      : '<span class="status status-pending">尚未回報</span>')
+    : `<span class="status status-${esc(c.status)}">${esc(STATUS_LABEL[c.status] || c.status)}</span>`;
+
+  return `
+    <article class="report${ok && c.reported ? ' is-reported' : ''}" data-card="${i}">
+      <div class="report-head">
+        <div class="report-title">
+          <strong>${esc(c.campaign.name)}</strong>
+          ${TYPE_BADGE[type] ? `<span class="type-badge type-${esc(type)}">${TYPE_BADGE[type]}</span>` : ''}
         </div>
-        ${x.report
-          ? `<div class="metric-grid">${metrics(x.report)}</div>`
-          : `<p class="report-msg">${esc(x.message || '')}</p>`}
-      </div>`).join('') || '<p class="meta">此帳號目前沒有進行中的廣告。</p>';
-  } else {
-    box.className = 'result metric-grid';
-    box.innerHTML = metrics(d.reports?.[0]);
+        ${statusPill}
+      </div>
+      ${ok
+        ? `<pre class="report-text">${esc(c.text)}</pre>
+           <button class="copy-btn${c.reported ? ' is-done' : ''}" type="button" data-copy="${i}">${c.reported ? '再次複製' : '複製回報'}</button>`
+        : `<p class="report-msg">${esc(c.message || '')}</p>`}
+    </article>`;
+}
+
+// 回報文字格式與舊版相同：
+//   廣告名稱 / M月份廣告成效回報 / 日期：截至 MM/DD / 各項指標
+function reportText(name, report, startDate, endDate) {
+  const d = report.data || {};
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const [ey, em, ed] = endDate.split('-').map(Number);
+  const sameMonth = sy === ey && sm === em;
+  const mmdd = (m, dd) => `${pad(m)}/${pad(dd)}`;
+
+  const heading = sameMonth ? `${em}月份廣告成效回報` : '廣告成效回報';
+  const dateLine = sameMonth && sd === 1
+    ? `日期：截至 ${mmdd(em, ed)}`
+    : `日期：${mmdd(sm, sd)} – ${mmdd(em, ed)}`;
+
+  const lines = report.type === 'message'
+    ? [
+      `累積私訊數：${n(d.messages)}`,
+      `單次私訊成本：$ ${n(d.costPerMessage)}`,
+      `累積花費：$ ${n(d.actualSpend)}`,
+    ]
+    : [
+      `${d.resultLabel || '成果'}次數：${n(d.resultCount)}`,
+      `每次${d.resultLabel || '成果'}成本：$ ${n(d.costPerResult)}`,
+      `累積花費：$ ${n(d.actualSpend)}`,
+      `點擊率：${Number(d.ctr || 0).toFixed(2)}%`,
+    ];
+
+  return [name, heading, '', dateLine, '', ...lines].join('\n');
+}
+
+async function copyReport(index, btn) {
+  const card = resultCards[index];
+  if (!card || btn.disabled) return;
+  btn.disabled = true;
+
+  // 必須在點擊當下就呼叫剪貼簿，iOS Safari 在 await 之後會失去使用者手勢而拒絕寫入
+  const copied = await copyText(card.text);
+  if (!copied) {
+    btn.disabled = false;
+    return toast('複製失敗，請長按上方文字手動複製');
+  }
+
+  if (card.reported) {
+    btn.disabled = false;
+    return toast('已再次複製回報內容');
+  }
+
+  try {
+    await api('/api/reports/mark-reported', {
+      method: 'POST',
+      body: JSON.stringify({
+        clientId: state.client.id,
+        campaignId: card.campaign.id,
+        campaignName: card.campaign.name,
+        reportType: state.mode === 'unified' ? 'unified' : 'individual',
+        startDate: card.period.startDate,
+        endDate: card.period.endDate,
+        metadata: { text: card.text },
+      }),
+    });
+    card.reported = true;
+    const el = document.querySelector(`[data-card="${index}"]`);
+    el.outerHTML = reportCard(card, index);
+    document.querySelector(`[data-card="${index}"] [data-copy]`).onclick =
+      e => copyReport(index, e.currentTarget);
+    toast('回報已複製，已標記為已回報。');
+  } catch (e) {
+    btn.disabled = false;
+    toast(`已複製，但標記已回報失敗：${e.message}`);
   }
 }
 
-function metrics(r) {
-  if (!r) return '';
-  const d = r.data || {};
-  const tile = (label, value) => `<div class="metric"><span>${esc(label)}</span><b>${value}</b></div>`;
-  if (r.type === 'message') {
-    return tile('累積私訊數', n(d.messages))
-      + tile('單次私訊成本', 'NT$ ' + n(d.costPerMessage))
-      + tile('累積花費', 'NT$ ' + n(d.actualSpend));
+function copyText(text) {
+  const legacy = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.className = 'clipboard-proxy';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch {}
+    ta.remove();
+    return ok;
+  };
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text).then(() => true, () => legacy());
   }
-  const label = d.resultLabel || '成果';
-  return tile(`${label}次數`, n(d.resultCount))
-    + tile(`每次${label}成本`, 'NT$ ' + n(d.costPerResult))
-    + tile('花費', 'NT$ ' + n(d.actualSpend))
-    + tile('點擊率', Number(d.ctr || 0).toFixed(2) + '%');
+  return Promise.resolve(legacy());
 }
 
 function n(v) { return Math.round(Number(v) || 0).toLocaleString('zh-TW'); }

@@ -20,7 +20,8 @@
 | `--text` / `--text-2` / `--text-3` | `#171717` / `#5b5b5b` / `#8b8b8b` | 主文字 / 次要說明 / 輔助資訊 |
 | `--bg` / `--surface` / `--surface-2` | `#f4f5f7` / `#fff` / `#f8f9fa` | 頁面底 / 卡片與外殼 / 次層底 |
 | `--line` / `--line-soft` | `#e6e7ea` / `#f0f1f3` | 卡片邊框 / 分隔線 |
-| `--ok`、`--danger`、`--warn` 各含 `-bg`、`-line` | — | 狀態色，只用在狀態徽章、錯誤框、危險按鈕 |
+| `--ok`、`--danger`、`--warn` 各含 `-bg`、`-line` | — | 狀態色，只用在狀態徽章、錯誤框、危險按鈕、已回報卡片 |
+| `--info` / `--info-bg` | `#1d5fbf` / `#eef4ff` | 流量型廣告徽章 |
 
 ### 間距（4px 基準）
 
@@ -158,22 +159,30 @@
 - 狀態 class：`.is-start`、`.is-end`、`.in-range`、`.has-end`（起點且有終點）、`.is-today`；未來日期 `disabled`。
 - 區間色帶以 `::before` 畫出：起點右半、終點左半、中間整格，在每週第一／最後一格收圓角。
 
-### 成效結果
+### 成效結果：回報卡片
+
+與舊版 Apps Script 相同：每個廣告一張卡片，內含可直接貼給客戶的回報文字。
 
 ```html
-<div class="result metric-grid">                <!-- 個別回報：兩欄指標 -->
-  <div class="metric"><span>標籤</span><b>數值</b></div>
-</div>
-
-<div class="result result-list">                <!-- 統一回報：每個廣告一張 -->
-  <div class="report">
-    <div class="report-head"><strong>廣告名稱</strong><span class="status status-ok">可回報</span></div>
-    <div class="metric-grid">…</div>
-  </div>
+<div class="result result-list">
+  <article class="report [is-reported]">
+    <div class="report-head">
+      <div class="report-title">
+        <strong>廣告名稱</strong>
+        <span class="type-badge type-message|type-traffic">私訊型廣告</span>
+      </div>
+      <span class="status status-pending|status-done">尚未回報 / ✓ 已回報</span>
+    </div>
+    <pre class="report-text">回報文字…</pre>
+    <button class="copy-btn [is-done]">複製回報 / 再次複製</button>
+  </article>
 </div>
 ```
 
-`.status-*` 對應後端的 `status` 值：`ok`、`no_data`、`requires_individual`、`no_active_adsets`、`error`。
+- `.report.is-reported`：已回報，淡綠底綠框；`.copy-btn.is-done` 變綠色「再次複製」。
+- `.report-text`：`white-space: pre-wrap`，可選取（剪貼簿失敗時使用者可長按手動複製）。
+- 無法回報的狀態（無資料、需個別回報）不顯示文字與按鈕，改顯示 `.report-msg` 說明；`.status-*` 對應後端的 `status` 值：`no_data`、`requires_individual`、`no_active_adsets`、`error`。
+- 回報卡片內的 `.copy-btn` 是「每張卡片一個主要動作」，不受「每個畫面只有一個 `.primary`」限制。
 
 ### 回饋
 
