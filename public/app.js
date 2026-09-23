@@ -728,8 +728,10 @@ async function buildReportImage(card) {
   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
   const blob = await new Promise((resolve, reject) =>
     canvas.toBlob(b => (b ? resolve(b) : reject(new Error('無法輸出 JPG'))), 'image/jpeg', 0.92));
-  // 檔名只用 ASCII：部分瀏覽器遇到中文檔名會退回成「download」
-  const filename = `ad-report_${card.period.startDate}_${card.period.endDate}_${card.campaign.id}.jpg`;
+  // 檔名 = 廣告名稱 + 統計區間，例如「私訊 PS65 Ada V2_2026-09-01~2026-09-23.jpg」
+  // 移除檔案系統不允許的字元（\ / : * ? " < > | 與控制字元）
+  const safeName = card.campaign.name.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, '_').trim().slice(0, 80) || '廣告成效回報';
+  const filename = `${safeName}_${card.period.startDate}~${card.period.endDate}.jpg`;
   const file = new File([blob], filename, { type: 'image/jpeg' });
   return { dataUrl, blob, file, width: W, height: H };
 }
