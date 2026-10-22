@@ -7,7 +7,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=24.22.1" },
   "dependencies": {
     "express": "^5.1.0",
     "pg": "^8.16.3"
